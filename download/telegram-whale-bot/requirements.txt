@@ -1,6 +1,2 @@
-python-telegram-bot[job-queue]==21.6
 aiohttp==3.9.5
 python-dotenv==1.0.1
-asyncio-throttle==1.0.2
-solana==0.34.0
-base58==2.1.1
