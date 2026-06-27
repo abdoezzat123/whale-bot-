@@ -1,0 +1,1015 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>دليل تسجيل Oracle Cloud المجاني - بوت الحيتان</title>
+<style>
+  @font-face {
+    font-family: 'NotoSansArabic';
+    src: url('file:///usr/share/fonts/truetype/chinese/NotoSansSC-Regular.ttf') format('truetype');
+  }
+  * {
+    box-sizing: border-box;
+    -webkit-print-color-adjust: exact;
+    print-color-adjust: exact;
+  }
+  body {
+    font-family: 'Noto Sans Arabic', 'Noto Sans SC', 'Segoe UI', Tahoma, sans-serif;
+    margin: 0;
+    padding: 0;
+    color: #1a1a2e;
+    background: #ffffff;
+    line-height: 1.8;
+    font-size: 15px;
+  }
+  /* ===== Cover Page ===== */
+  .cover {
+    background: linear-gradient(135deg, #1e3c72 0%, #2a5298 50%, #c41e3a 100%);
+    color: white;
+    padding: 80px 50px;
+    text-align: center;
+    page-break-after: always;
+    min-height: 100vh;
+    display: flex;
+    flex-direction: column;
+    justify-content: center;
+  }
+  .cover h1 {
+    font-size: 42px;
+    margin: 0 0 20px;
+    line-height: 1.3;
+    text-shadow: 2px 2px 10px rgba(0,0,0,0.3);
+  }
+  .cover .subtitle {
+    font-size: 22px;
+    opacity: 0.95;
+    margin-bottom: 40px;
+  }
+  .cover .bot-info {
+    background: rgba(255,255,255,0.15);
+    padding: 25px 30px;
+    border-radius: 15px;
+    margin-top: 30px;
+    max-width: 600px;
+    margin-left: auto;
+    margin-right: auto;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .cover .bot-info h3 {
+    margin: 0 0 15px;
+    font-size: 22px;
+  }
+  .cover .bot-info ul {
+    text-align: right;
+    padding-right: 25px;
+    margin: 0;
+  }
+  .cover .bot-info li {
+    margin-bottom: 8px;
+    font-size: 16px;
+  }
+  .cover .spec-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 20px;
+    margin-top: 40px;
+    max-width: 700px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+  .spec-card {
+    background: rgba(255,255,255,0.15);
+    padding: 20px;
+    border-radius: 12px;
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .spec-card .num {
+    font-size: 32px;
+    font-weight: bold;
+    display: block;
+  }
+  .spec-card .label {
+    font-size: 14px;
+    opacity: 0.9;
+  }
+
+  /* ===== Content Pages ===== */
+  .container {
+    max-width: 900px;
+    margin: 0 auto;
+    padding: 40px 50px;
+  }
+  h2 {
+    color: #1e3c72;
+    border-right: 6px solid #c41e3a;
+    padding-right: 18px;
+    margin-top: 50px;
+    margin-bottom: 25px;
+    font-size: 28px;
+    page-break-after: avoid;
+  }
+  h3 {
+    color: #2a5298;
+    margin-top: 35px;
+    margin-bottom: 15px;
+    font-size: 20px;
+    page-break-after: avoid;
+  }
+  p { margin: 12px 0; text-align: justify; }
+  ul, ol { padding-right: 30px; }
+  li { margin-bottom: 10px; }
+
+  /* Steps */
+  .step {
+    background: #f8f9ff;
+    border: 1px solid #e1e8f5;
+    border-right: 5px solid #2a5298;
+    border-radius: 10px;
+    padding: 25px 30px;
+    margin: 25px 0;
+    page-break-inside: avoid;
+  }
+  .step-number {
+    display: inline-block;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    text-align: center;
+    line-height: 40px;
+    font-weight: bold;
+    margin-left: 15px;
+    font-size: 18px;
+  }
+  .step-title {
+    display: inline-block;
+    vertical-align: middle;
+    font-size: 20px;
+    font-weight: bold;
+    color: #1e3c72;
+  }
+  .step-content {
+    margin-top: 15px;
+  }
+
+  /* Images */
+  .img-wrapper {
+    text-align: center;
+    margin: 25px 0;
+    page-break-inside: avoid;
+  }
+  .img-wrapper img {
+    max-width: 100%;
+    border: 2px solid #e1e8f5;
+    border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .img-caption {
+    color: #666;
+    font-size: 13px;
+    margin-top: 8px;
+    font-style: italic;
+  }
+
+  /* Code blocks */
+  pre {
+    background: #1a1a2e;
+    color: #e0e0e0;
+    padding: 20px;
+    border-radius: 10px;
+    overflow-x: auto;
+    direction: ltr;
+    text-align: left;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    line-height: 1.6;
+    page-break-inside: avoid;
+    border-right: 4px solid #c41e3a;
+  }
+  pre code {
+    color: inherit;
+  }
+  code {
+    background: #f0f4ff;
+    color: #c41e3a;
+    padding: 2px 8px;
+    border-radius: 4px;
+    font-family: 'Courier New', monospace;
+    font-size: 13px;
+    direction: ltr;
+    display: inline-block;
+  }
+
+  /* Warning boxes */
+  .warning {
+    background: #fff3cd;
+    border-right: 5px solid #ffc107;
+    border-radius: 10px;
+    padding: 20px 25px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .warning::before {
+    content: "⚠️ تحذير";
+    display: block;
+    font-weight: bold;
+    color: #856404;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .tip {
+    background: #d4edda;
+    border-right: 5px solid #28a745;
+    border-radius: 10px;
+    padding: 20px 25px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .tip::before {
+    content: "✅ نصيحة";
+    display: block;
+    font-weight: bold;
+    color: #155724;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+  .info {
+    background: #d1ecf1;
+    border-right: 5px solid #17a2b8;
+    border-radius: 10px;
+    padding: 20px 25px;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .info::before {
+    content: "ℹ️ ملاحظة";
+    display: block;
+    font-weight: bold;
+    color: #0c5460;
+    font-size: 18px;
+    margin-bottom: 8px;
+  }
+
+  /* TOC */
+  .toc {
+    background: #f8f9ff;
+    border: 1px solid #e1e8f5;
+    border-radius: 15px;
+    padding: 30px 40px;
+    margin: 30px 0;
+    page-break-after: always;
+  }
+  .toc h2 {
+    border: none;
+    text-align: center;
+    color: #1e3c72;
+    margin-top: 0;
+  }
+  .toc ol {
+    counter-reset: toc;
+    list-style: none;
+    padding: 0;
+  }
+  .toc li {
+    counter-increment: toc;
+    padding: 12px 0;
+    border-bottom: 1px dashed #e1e8f5;
+    font-size: 16px;
+  }
+  .toc li::before {
+    content: counter(toc) ".";
+    color: #c41e3a;
+    font-weight: bold;
+    font-size: 18px;
+    margin-left: 10px;
+  }
+
+  /* Table */
+  table {
+    width: 100%;
+    border-collapse: collapse;
+    margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  th, td {
+    border: 1px solid #e1e8f5;
+    padding: 12px 15px;
+    text-align: right;
+  }
+  th {
+    background: #1e3c72;
+    color: white;
+  }
+  tr:nth-child(even) {
+    background: #f8f9ff;
+  }
+
+  /* Page breaks */
+  h2 { page-break-before: auto; }
+
+  /* Final page */
+  .final-page {
+    text-align: center;
+    padding: 80px 40px;
+    background: linear-gradient(135deg, #1e3c72, #2a5298);
+    color: white;
+    margin-top: 50px;
+    page-break-before: always;
+    border-radius: 15px;
+  }
+  .final-page h2 {
+    color: white;
+    border: none;
+    text-align: center;
+    font-size: 36px;
+  }
+  .final-page p {
+    font-size: 18px;
+    opacity: 0.95;
+  }
+
+  @page {
+    size: A4;
+    margin: 1.5cm;
+  }
+</style>
+</head>
+<body>
+
+<!-- ===== Cover Page ===== -->
+<div class="cover">
+  <h1>☁️ دليل تسجيل Oracle Cloud المجاني</h1>
+  <div class="subtitle">خطوة بخطوة لتشغيل بوت الحيتان 24/7</div>
+
+  <div class="bot-info">
+    <h3>🐋 بوت تتبع حيتان Meme Coins</h3>
+    <ul>
+      <li>إشعار فوري لما الحيتان تشتري</li>
+      <li>بيانات العملة الكاملة من DexScreener</li>
+      <li>كشف العملات الجديدة 🆕</li>
+      <li>مجاني 100% مدى الحياة</li>
+    </ul>
+  </div>
+
+  <div class="spec-grid">
+    <div class="spec-card">
+      <span class="num">4</span>
+      <span class="label">CPU Cores (ARM)</span>
+    </div>
+    <div class="spec-card">
+      <span class="num">24GB</span>
+      <span class="label">RAM</span>
+    </div>
+    <div class="spec-card">
+      <span class="num">200GB</span>
+      <span class="label">Storage</span>
+    </div>
+  </div>
+
+  <p style="margin-top: 40px; opacity: 0.85; font-size: 16px;">
+    Always Free Tier · بدون رسوم خفية · مدى الحياة
+  </p>
+</div>
+
+<!-- ===== Table of Contents ===== -->
+<div class="container">
+  <div class="toc">
+    <h2>📑 الفهرس</h2>
+    <ol>
+      <li>قبل ما نبدأ - المتطلبات</li>
+      <li>إنشاء حساب Oracle Cloud</li>
+      <li>اختيار الـ Home Region (مهم!)</li>
+      <li>إضافة بطاقة الائتمان (للتحقق فقط)</li>
+      <li>إنشاء VM Instance جديد</li>
+      <li>اختيار شكل الـ Ampere ARM (4 cores/24GB)</li>
+      <li>توليد SSH Key</li>
+      <li>إعدادات الشبكة والـ Ports</li>
+      <li>الاتصال بالـ VPS بـ SSH</li>
+      <li>تثبيت البوت وتشغيله</li>
+      <li>تشغيل تلقائي بعد الإعادة (systemd)</li>
+      <li>مشاكل شائعة وحلولها</li>
+    </ol>
+  </div>
+
+  <!-- ===== Section 1: Prerequisites ===== -->
+  <h2>1️⃣ قبل ما نبدأ - المتطلبات</h2>
+
+  <p>قبل ما تروح تسجل في Oracle Cloud، اتأكد إنك عندك الحاجات دي:</p>
+
+  <ul>
+    <li><strong>إيميل جديد</strong> - يفضل تعمل إيميل جديد مخصوص للبوت (Gmail أو Outlook)</li>
+    <li><strong>بطاقة ائتمان أو debit card</strong> - Oracle بيتحقق منها بمبلغ صغير ($1) ويرجعه. مش هيتخصم أي حاجة.</li>
+    <li><strong>رقم موبايل</strong> - للتحقق بـ SMS</li>
+    <li><strong>VPN (موصى به)</strong> - لو في مصر، يفضل تستخدم VPN (US أو UK) علشان التسجيل يعد بسهولة</li>
+  </ul>
+
+  <div class="warning">
+    ملاحظة مهمة عن البطاقة البنكية: Oracle بيتخصص مبلغ $1 مؤقت للتحقق من البطاقة، وبعدها بيرجعه في خلال 7 أيام. <strong>مش هتتخصم أي رسوم شهرية</strong> ما دمت داخل الـ Always Free tier.
+  </div>
+
+  <div class="tip">
+    لو معندكش بطاقة ائتمان، تقدر تستخدم <strong>Revolut</strong> أو <strong>N26</strong> أو <strong>Wise</strong> - دول بيدوك بطاقة virtual مجانية ومناسبة للتسجيل.
+  </div>
+
+  <!-- ===== Section 2: Sign Up ===== -->
+  <h2>2️⃣ إنشاء حساب Oracle Cloud</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح صفحة التسجيل</span>
+    <div class="step-content">
+      <p>ادخل على الرابط ده:</p>
+      <p><code>https://www.oracle.com/cloud/free/</code></p>
+      <p>دوس على زرار <strong>"Start for free"</strong> فوق على اليمين.</p>
+
+      <div class="img-wrapper">
+        <img src="images/01_signup.png" alt="Oracle Cloud signup page">
+        <div class="img-caption">صفحة Oracle Cloud Free Tier - دوس "Start for free"</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">املأ بياناتك الأساسية</span>
+    <div class="step-content">
+      <p>هتلاقي فورم تسجيل فيه الحاجات دي:</p>
+      <ul>
+        <li><strong>Country</strong>: اختر بلدك (مثلاً Egypt أو United States لو بتستخدم VPN)</li>
+        <li><strong>Name</strong>: الاسم الكامل (يفضل زي اللي في البطاقة)</li>
+        <li><strong>Email</strong>: الإيميل الجديد</li>
+        <li><strong>Password</strong>: باسورد قوي (حروف + أرقام + رموز)</li>
+        <li><strong>Company Name</strong>: اختياري، اكتب أي حاجة</li>
+      </ul>
+
+      <div class="warning">
+        اختر <strong>Cloud Account Type = "Individual"</strong> مش Enterprise - علشان تقدر تستخدم الـ Free Tier.
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">تحقق من الإيميل</span>
+    <div class="step-content">
+      <p>هيوصلك إيميل من Oracle فيه كود تحقق. انسخ الكود وحطه في الصفحة.</p>
+      <p>لو مريتش الإيميل في الـ Spam/Junk بعد دقيقة.</p>
+    </div>
+  </div>
+
+  <!-- ===== Section 3: Region ===== -->
+  <h2>3️⃣ اختيار الـ Home Region (مهم جداً!)</h2>
+
+  <p>ده أهم قرار في التسجيل كله. الـ Home Region هو المكان اللي VM هيكون موجود فيه، <strong>ومش هتقدر تغيره بعد كده</strong>.</p>
+
+  <div class="img-wrapper">
+    <img src="images/02_region.png" alt="Region selection">
+    <div class="img-caption">صفحة اختيار الـ Home Region</div>
+  </div>
+
+  <div class="warning">
+    <strong>مهم جداً:</strong> اختار region فيه <strong>Ampere A1 instances متاحة</strong> (4 cores/24GB RAM مجانية).
+    المناطق الموصى بها:
+    <ul>
+      <li>🇺🇸 <strong>US East (Ashburn)</strong> - الأفضل والأكثر توفر</li>
+      <li>🇺🇸 <strong>US West (San Jose)</strong> - ممتاز كمان</li>
+      <li>🇩🇪 <strong>EU Frankfurt</strong> - أقرب للشرق الأوسط</li>
+      <li>🇬🇧 <strong>UK South (London)</strong> - كويس</li>
+    </ul>
+    <strong>تجنب</strong> المناطق الصغيرة (مثل Dubai, Mumbai, Singapore) - مش دايماً فيها Ampere متاح.
+  </div>
+
+  <div class="tip">
+    لو سجلت في region وطلع مفيش Ampere متاح، تقدر تعمل account تاني بإيميل تاني في region تاني. علشان كده اختار صح من الأول!
+  </div>
+
+  <!-- ===== Section 4: Credit Card ===== -->
+  <h2>4️⃣ إضافة بطاقة الائتمان (للتحقق فقط)</h2>
+
+  <p>هتدخل على صفحة إضافة البطاقة. Oracle محتاج البطاقة علشان يتأكد إنك شخص حقيقي، مش روبوت.</p>
+
+  <div class="img-wrapper">
+    <img src="images/03_credit_card.png" alt="Credit card verification">
+    <div class="img-caption">صفحة إدخال بيانات البطاقة</div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">أدخل بيانات البطاقة</span>
+    <div class="step-content">
+      <ul>
+        <li><strong>Card Number</strong>: رقم البطاقة (16 رقم)</li>
+        <li><strong>Name on Card</strong>: الاسم زي ما هو مكتوب على البطاقة</li>
+        <li><strong>Expiry Date</strong>: MM/YY</li>
+        <li><strong>CVV</strong>: الـ 3 أرقام من ورا</li>
+        <li><strong>Billing Address</strong>: عنوان زي اللي في كشف الحساب</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">تحقق من البطاقة</span>
+    <div class="step-content">
+      <p>Oracle هيتخصص مبلغ صغير (حوالي $1) من البطاقة ويرجعه في 7 أيام. ده مجرد تحقق.</p>
+      <p>ممكن كمان يطلب منك ترفع صورة البطاقة أو إثبات عنوان - ده طبيعي لو الـ fraud detection لقى أي حاجة مش مظبوطة.</p>
+    </div>
+  </div>
+
+  <div class="warning">
+    <strong>مشاكل شائعة مع البطاقة:</strong>
+    <ul>
+      <li>لو البطاقة مصرية، ممكن ترفضها من أول مرة. جرّب بطاقة تانية أو VPN.</li>
+      <li>لو معندكش بطاقة، استخدم <strong>Wise Virtual Card</strong> (مجاني)</li>
+      <li>متستخدمش بطاقة وهمية أو generated - هتتعرض الـ account</li>
+    </ul>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">تحقق من الموبايل</span>
+    <div class="step-content">
+      <p>هيوصلك SMS بكود تحقق على رقم الموبايل. أدخله وخلص التسجيل.</p>
+      <p>بعد كده هيظهرلك رسالة <strong>"Account is being provisioned"</strong> - الانتظار ممكن يوصل لـ 30 دقيقة (وأحياناً ساعات).</p>
+    </div>
+  </div>
+
+  <div class="info">
+    لو الـ account لسه pending بعد 24 ساعة، افتح ticket من support: <code>https://support.oracle.com</code>
+  </div>
+
+  <!-- ===== Section 5: Create VM ===== -->
+  <h2>5️⃣ إنشاء VM Instance جديد</h2>
+
+  <p>بعد ما الـ account يتفعل، سجل دخول على Oracle Cloud:</p>
+  <p><code>https://cloud.oracle.com</code></p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح Compute → Instances</span>
+    <div class="step-content">
+      <p>من القائمة على اليسار (أو اليمين في RTL):</p>
+      <ul>
+        <li>دوس على <strong>☰ Menu</strong> فوق على اليسار</li>
+        <li>اختر <strong>Compute → Instances</strong></li>
+        <li>دوس زرار <strong>"Create Instance"</strong></li>
+      </ul>
+
+      <div class="img-wrapper">
+        <img src="images/04_instance.png" alt="Create instance">
+        <div class="img-caption">صفحة إنشاء instance جديد</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">سمّي الـ instance</span>
+    <div class="step-content">
+      <p>اكتب اسم واضح زي <code>whale-bot-vps</code></p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">اختر الـ Image (Ubuntu)</span>
+    <div class="step-content">
+      <p>دوس على <strong>Edit</strong> في قسم Image and Shape:</p>
+      <ul>
+        <li>Image: <strong>Canonical Ubuntu 22.04</strong> (أو 24.04)</li>
+        <li>متغير الـ image build اللي هو "Always free eligible"</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== Section 6: Shape ===== -->
+  <h2>6️⃣ اختيار شكل الـ Ampere ARM (4 cores/24GB RAM)</h2>
+
+  <p>الخطوة دي أهم خطوة - هنا بتاخد الخصم المجاني الكامل.</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">دوس Edit في قسم Shape</span>
+    <div class="step-content">
+      <p>هتلاقي قائمة الـ shapes. دور على:</p>
+      <p><strong>Ampere → VM.Standard.A1.Flex</strong></p>
+
+      <div class="img-wrapper">
+        <img src="images/05_shape.png" alt="Ampere A1 shape">
+        <div class="img-caption">اختيار Ampere A1 Flex shape</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اضبط المواصفات</span>
+    <div class="step-content">
+      <p>بعد ما تختار <strong>VM.Standard.A1.Flex</strong>، هتلاقي سلايدر للـ cores والـ RAM:</p>
+      <ul>
+        <li><strong>Number of OCPUs</strong>: <strong>4</strong> (أقصى حد مجاني)</li>
+        <li><strong>Amount of Memory (GB)</strong>: <strong>24</strong> (أقصى حد مجاني)</li>
+      </ul>
+
+      <div class="tip">
+        الـ Always Free tier بيدّيك إجمالي 4 OCPUs و 24GB RAM للـ Ampere ARM.
+        تقدر تعمل VM واحد بكل الموارد، أو 2 بـ 2 cores/12GB لكل واحد.
+        للبوت بتاعنا، VM واحد بكل الموارد كافي جداً.
+      </div>
+    </div>
+  </div>
+
+  <div class="warning">
+    <strong>لو مفيش Ampere متاح</strong> هيظهرلك رسالة "Out of capacity in your region".
+    الحلول:
+    <ul>
+      <li>جرّب في وقت تاني (ليلاً مثلاً)</li>
+      <li>غيّر الـ Availability Domain</li>
+      <li>لو مستعجل، ابدأ بـ VM.Standard.E2.1.Micro (1GB RAM) - مجاني لكن ضعيف</li>
+      <li>طول بالك، Ampere بيتحرر كل شوية</li>
+    </ul>
+  </div>
+
+  <!-- ===== Section 7: SSH Key ===== -->
+  <h2>7️⃣ توليد SSH Key</h2>
+
+  <p>علشان تتصل بالـ VPS، محتاج SSH Key. ده مفتاحين: <strong>private</strong> (عندك) و <strong>public</strong> (على الـ VPS).</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">نزل Oracle Cloud SSH Key Generator</span>
+    <div class="step-content">
+      <p>في صفحة إنشاء الـ instance، انزل تحت لـ <strong>"Add SSH keys"</strong>:</p>
+      <ul>
+        <li>اختر <strong>"Generate a key pair"</strong></li>
+        <li>دوس <strong>"Save Private Key"</strong> - هينزل ملف <code>ssh-key-YYYY.key</code></li>
+        <li>دوس <strong>"Save Public Key"</strong> - هينزل ملف <code>ssh-key-YYYY.pub</code></li>
+      </ul>
+
+      <div class="img-wrapper">
+        <img src="images/06_ssh_key.png" alt="SSH key generation">
+        <div class="img-caption">توليد وحفظ SSH keys</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="warning">
+    <strong>احتفظ بـ private key في مكان آمن!</strong> ده زي كلمة السر بتاعتك للـ VPS.
+    لو ضاع، مش هتقدر تدخل تاني. متشاركوش مع حد ومترفعهوش على GitHub.
+  </div>
+
+  <div class="tip">
+    بدل ما تولّد key من Oracle، تقدر تولّد واحدة بنفسك بـ PuTTYgen (Windows) أو <code>ssh-keygen</code> (Linux/Mac)
+    وترفع الـ public key في خانة "Save public key".
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">خلي VCN الافتراضي</span>
+    <div class="step-content">
+      <p>Oracle هيعملك Virtual Cloud Network (VCN) تلقائي. خلي الافتراضي - فيه ports الـ SSH (22) مفتوحة.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">دوس Create</span>
+    <div class="step-content">
+      <p>دوس <strong>"Create"</strong> في آخر الصفحة. الـ instance هيبدأ ينشأ في خلال 1-3 دقايق.</p>
+      <p>بعد ما يبقى جاهز، هيظهرلك <strong>Public IP Address</strong> - انسخه، هتحتاجه.</p>
+    </div>
+  </div>
+
+  <!-- ===== Section 8: Networking ===== -->
+  <h2>8️⃣ إعدادات الشبكة والـ Ports (اختياري)</h2>
+
+  <p>البوت مش محتاج أي port مفتوح (كل الـ notifications بتطلع من البوت لـ Telegram). بس لو حابب تفتح port للـ HTTP أو monitoring، اعمل الآتي:</p>
+
+  <div class="img-wrapper">
+    <img src="images/07_networking.png" alt="Networking security list">
+    <div class="img-caption">VCN Security List - إضافة Ingress Rules</div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح VCN Security List</span>
+    <div class="step-content">
+      <ul>
+        <li>Menu → Networking → Virtual Cloud Networks</li>
+        <li>دوس على الـ VCN بتاعتك</li>
+        <li>دوس على <strong>Security Lists</strong> → Default Security List</li>
+        <li>دوس <strong>"Add Ingress Rules"</strong></li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">أضف الـ ports اللي محتاجها</span>
+    <div class="step-content">
+      <p>للبوت، مش محتاج تفتح أي حاجة. الـ SSH (port 22) مفتوح افتراضياً.</p>
+      <p>لو حابب تفتح HTTP (80) و HTTPS (443) لو حابب تضيف web interface:</p>
+      <pre><code>Source CIDR: 0.0.0.0/0
+IP Protocol: TCP
+Destination Port Range: 80,443
+Description: HTTP/HTTPS access</code></pre>
+    </div>
+  </div>
+
+  <!-- ===== Section 9: SSH Connect ===== -->
+  <h2>9️⃣ الاتصال بالـ VPS بـ SSH</h2>
+
+  <h3>على Linux / Mac / Windows 10+</h3>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح Terminal</span>
+    <div class="step-content">
+      <p>عدّل صلاحيات الـ private key (لو مش عامل):</p>
+      <pre><code>chmod 400 ~/Downloads/ssh-key-XXXX.key</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اتصل بالـ VPS</span>
+    <div class="step-content">
+      <p>الـ username الافتراضي على Ubuntu هو <code>ubuntu</code>:</p>
+      <pre><code>ssh -i ~/Downloads/ssh-key-XXXX.key ubuntu@YOUR_PUBLIC_IP</code></pre>
+      <p>مثال:</p>
+      <pre><code>ssh -i ~/Downloads/ssh-key-2026.key ubuntu@129.154.55.100</code></pre>
+      <p>أول مرة هيطلب منك تأكيد - اكتب <code>yes</code> واضغط Enter.</p>
+
+      <div class="img-wrapper">
+        <img src="images/08_ssh_connect.png" alt="SSH connection">
+        <div class="img-caption">الاتصال بـ SSH - أول مرة</div>
+      </div>
+    </div>
+  </div>
+
+  <h3>على Windows (PuTTY)</h3>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">حول الـ key بصيغة PuTTY</span>
+    <div class="step-content">
+      <ul>
+        <li>نزل PuTTYgen من <code>https://www.puttygen.com</code></li>
+        <li>افتح PuTTYgen → Conversions → Import Key</li>
+        <li>اختر ملف الـ private key اللي نزلته</li>
+        <li>دوس "Save private key" → احفظه بـ .ppk</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">افتح PuTTY واتصل</span>
+    <div class="step-content">
+      <ul>
+        <li>Host Name: <code>ubuntu@YOUR_PUBLIC_IP</code></li>
+        <li>Port: 22</li>
+        <li>Category → Connection → SSH → Auth → Browse → اختر الـ .ppk</li>
+        <li>دوس Open</li>
+      </ul>
+    </div>
+  </div>
+
+  <!-- ===== Section 10: Install Bot ===== -->
+  <h2>🔟 تثبيت البوت وتشغيله</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">حدّث النظام وثبّت Python</span>
+    <div class="step-content">
+      <pre><code>sudo apt update
+sudo apt install -y python3 python3-pip python3-venv git tmux</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">انقل ملفات البوت للـ VPS</span>
+    <div class="step-content">
+      <p>في Terminal على جهازك (موصل بالإنتيرنيت):</p>
+      <pre><code># من جهازك - ارفع الملفات للـ VPS
+scp -i ~/Downloads/ssh-key-XXXX.key \
+  bot.py whales.py requirements.txt .env \
+  ubuntu@YOUR_PUBLIC_IP:/home/ubuntu/
+
+# أو لو رفعت المشروع على GitHub
+ssh -i ~/Downloads/ssh-key-XXXX.key ubuntu@YOUR_PUBLIC_IP
+# ثم على الـ VPS:
+git clone https://github.com/USERNAME/whale-bot.git
+cd whale-bot</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">اعمل Virtual Environment</span>
+    <div class="step-content">
+      <pre><code>cd /home/ubuntu/whale-bot   # أو المسار اللي رفعت فيه الملفات
+python3 -m venv venv
+source venv/bin/activate
+pip install -r requirements.txt</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">املأ .env بالقيم الصحيحة</span>
+    <div class="step-content">
+      <pre><code>nano .env</code></pre>
+      <p>تأكد إن فيه:</p>
+      <pre><code>TELEGRAM_BOT_TOKEN=8688639320:AAHw_CthYwmNDBcYwKnuIbT_MOSAxLrkcCM
+TELEGRAM_CHAT_ID=123456789
+HELIUS_API_KEY=your_helius_key_here
+MIN_BUY_USD=500
+POLL_SECONDS=30</code></pre>
+      <p>للحفظ: <code>Ctrl+O</code> ثم <code>Enter</code>، للخروج: <code>Ctrl+X</code></p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">5</span>
+    <span class="step-title">شغّل البوت بـ tmux (يفضل شغال بعد القفل)</span>
+    <div class="step-content">
+      <pre><code>tmux new -s whale
+python bot.py</code></pre>
+
+      <div class="img-wrapper">
+        <img src="images/09_tmux.png" alt="tmux session">
+        <div class="img-caption">البوت شغال في tmux session</div>
+      </div>
+
+      <p>هتلاقي رسالة على Telegram بتأكد إن البوت اشتغل ✅</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">6</span>
+    <span class="step-title">اخرج من tmux بدون ما تقفل البوت</span>
+    <div class="step-content">
+      <p>اضغط الترتيب ده:</p>
+      <pre><code>Ctrl+B  ثم اتركهم واضغط  D</code></pre>
+      <p>هتطلع للـ shell العادي، والبوت يفضل شغال في الـ background.</p>
+      <p>للرجوع للـ tmux:</p>
+      <pre><code>tmux attach -t whale</code></pre>
+      <p>للرجوع والقفل:</p>
+      <pre><code>tmux kill-session -t whale</code></pre>
+    </div>
+  </div>
+
+  <!-- ===== Section 11: Systemd ===== -->
+  <h2>1️⃣1️⃣ تشغيل تلقائي بعد الإعادة (systemd)</h2>
+
+  <p>علشان البوت يشتغل تلقائياً بعد ما الـ VPS يعمل reboot أو update:</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">اعمل systemd service file</span>
+    <div class="step-content">
+      <pre><code>sudo nano /etc/systemd/system/whale-bot.service</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اكتب المحتوى ده</span>
+    <div class="step-content">
+      <pre><code>[Unit]
+Description=Whale Tracker Bot
+After=network.target
+
+[Service]
+Type=simple
+User=ubuntu
+WorkingDirectory=/home/ubuntu/whale-bot
+ExecStart=/home/ubuntu/whale-bot/venv/bin/python bot.py
+Restart=always
+RestartSec=10
+StandardOutput=append:/var/log/whale-bot.log
+StandardError=append:/var/log/whale-bot.log
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">فعّل وشغّل الخدمة</span>
+    <div class="step-content">
+      <pre><code>sudo systemctl daemon-reload
+sudo systemctl enable whale-bot
+sudo systemctl start whale-bot
+sudo systemctl status whale-bot</code></pre>
+      <p>تأكد إن status = "active (running)".</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">4</span>
+    <span class="step-title">راجع الـ logs لو فيه مشاكل</span>
+    <div class="step-content">
+      <pre><code># logs live
+sudo journalctl -u whale-bot -f
+
+# أو لو عامل log file
+sudo tail -f /var/log/whale-bot.log</code></pre>
+    </div>
+  </div>
+
+  <div class="tip">
+    دلوقتي البوت هيشتغل تلقائياً بعد كل reboot. حتى لو الـ VPS وقع، systemd هيرجعه في خلال 10 ثواني.
+  </div>
+
+  <!-- ===== Section 12: Troubleshooting ===== -->
+  <h2>1️⃣2️⃣ مشاكل شائعة وحلولها</h2>
+
+  <h3>المشكلة 1: "Out of capacity" لما تختار Ampere</h3>
+  <p>السبب: Oracle بتوفر Ampere instances بكميات محدودة في كل region.</p>
+  <p><strong>الحل:</strong></p>
+  <ul>
+    <li>جرّب تاني بعد ساعة أو يوم</li>
+    <li>غيّر الـ Availability Domain (AD-1, AD-2, AD-3)</li>
+    <li>ابدأ بـ VM.Standard.E2.1.Micro (1GB) مؤقتاً</li>
+    <li>اعمل script يحاول كل دقيقة (لو مستعجل)</li>
+  </ul>
+
+  <h3>المشكلة 2: SSH connection refused</h3>
+  <p><strong>الحل:</strong></p>
+  <ul>
+    <li>تأكد إن البورت 22 مفتوح في Security List</li>
+    <li>تأكد إنك بتستخدم الـ private key الصح</li>
+    <li>تأكد إن الـ username <code>ubuntu</code> (مش root)</li>
+    <li>تأكد إن الـ instance شغال (status = Running)</li>
+  </ul>
+
+  <h3>المشكلة 3: البوت بطل يبعت إشعارات</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code># شوف الـ logs
+sudo journalctl -u whale-bot -n 50
+
+# لو فيه error في Helius API
+# - تأكد إن HELIUS_API_KEY مظبوط في .env
+# - تأكد إنك مش جاوزت الـ rate limit
+
+# لو فيه error في Telegram
+# - تأكد إن TELEGRAM_CHAT_ID مظبوط
+# - تأكد إن البوت مش blocked من Telegram
+
+# ريستارت البوت
+sudo systemctl restart whale-bot</code></pre>
+
+  <h3>المشكلة 4: Account pending أكتر من 24 ساعة</h3>
+  <p><strong>الحل:</strong></p>
+  <ul>
+    <li>افتح support ticket: <code>https://support.oracle.com</code></li>
+    <li>موضوع الـ ticket: "Free Tier account pending for over 24 hours"</li>
+    <li>عادةً بيتحل في 1-3 أيام</li>
+  </ul>
+
+  <h3>المشكلة 5: البطاقة اترفضت</h3>
+  <p><strong>الحل:</strong></p>
+  <ul>
+    <li>جرّب بطاقة تانية</li>
+    <li>استخدم Wise/Revolut virtual card</li>
+    <li>اتصل بالبنك بتاعك علشان يشيل block على المعاملات الدولية</li>
+    <li>لو من مصر، جرّب VPN (US/UK)</li>
+  </ul>
+
+  <h3>المشكلة 6: VPS فيه لاج عالي</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code># شوف استهلاك الموارد
+top
+df -h
+free -h
+
+# لو الـ RAM ممتلئ
+sudo fallocate -l 4G /swapfile
+sudo chmod 600 /swapfile
+sudo mkswap /swapfile
+sudo swapon /swapfile</code></pre>
+
+  <!-- ===== Final ===== -->
+  <div class="final-page">
+    <h2>🎉 مبروك!</h2>
+    <p style="font-size: 20px; margin-top: 30px;">
+      البوت شغال 24/7 على Oracle Cloud المجاني
+    </p>
+    <p style="opacity: 0.9;">
+      دلوقتي هتوصلك إشعارات فورية لما أي حوت يشتري meme coin على Solana 🐋
+    </p>
+    <p style="margin-top: 40px; opacity: 0.7; font-size: 14px;">
+      لو عندك أي مشكلة، ارجع لقسم "مشاكل شائعة" أو كلمني على Telegram
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
