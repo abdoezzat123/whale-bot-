@@ -2,101 +2,91 @@
 
 بوت بسيط بيراقب محافظ الحيتان على شبكة Solana وبيبعتلك إشعار فوري على Telegram لما أي حوت يشتري meme coin.
 
-## المميزات
+## ✨ المميزات
 
+- ✅ **مجاني 100%** - مش محتاج أي API key (يستخدم public Solana RPCs)
 - ✅ إشعار فوري عند شراء أي حوت
 - ✅ بيانات العملة الكاملة من DexScreener (السعر، السيولة، الحجم، Market Cap)
 - ✅ كشف العملات الجديدة (🆕 جديده!)
 - ✅ فلترة حسب قيمة الشراء (مثلاً إشعار بس للشركات فوق $500)
 - ✅ إضافة/حذف محافظ من Telegram مباشرة
-- ✅ مجاني 100% (Helius free tier + DexScreener free)
+- ✅ **Multi-RPC system** - بيستخدم عدة endpoints بالتوازي علشان reliability أعلى
+- ✅ لو حطيت Helius API key (اختياري) → أسرع وأقوى
 
-## المتطلبات
+## 🚀 التشغيل السريع (Docker - موصى به)
 
-- Python 3.9+
-- Telegram Bot Token (من @BotFather)
-- Helius API key (مجاني من https://www.helius.dev/)
-- Chat ID بتاعك على Telegram
-
-## التشغيل
-
-### 1. تثبيت المتطلبات
+### على AWS EC2 / أي VPS:
 
 ```bash
-cd telegram-whale-bot
-python3 -m venv venv
-source venv/bin/activate    # على ويندوز: venv\Scripts\activate
-pip install -r requirements.txt
+# 1. انسخ المشروع
+git clone https://github.com/USERNAME/whale-bot.git
+cd whale-bot
+
+# 2. املأ .env (التوكن موجود بالفعل - بس ضيف Helius لو عندك)
+nano .env
+
+# 3. شغّل بـ Docker
+docker compose up -d --build
+
+# 4. شوف الـ logs
+docker compose logs -f
 ```
 
-### 2. ضبط الإعدادات
+### على جهازك (بدون Docker):
 
-افتح ملف `.env` واملأ القيم:
+```bash
+# 1. ثبّت المتطلبات
+python3 -m venv venv
+source venv/bin/activate    # ويندوز: venv\Scripts\activate
+pip install -r requirements.txt
+
+# 2. املأ .env
+
+# 3. شغّل
+python bot.py
+```
+
+## 📋 إعداد .env
 
 ```env
-TELEGRAM_BOT_TOKEN=8688639320:AAHw_CthYwmNDBcYwKnuIbT_MOSAxLrkcCM  # ✅ موجود
-TELEGRAM_CHAT_ID=123456789        # ← تحتاج تجيبه
-HELIUS_API_KEY=                   # ← تحتاج تسجل في helius.dev
+TELEGRAM_BOT_TOKEN=8688639320:AAHw_CthYwmNDBcYwKnuIbT_MOSAxLrkcCM
+TELEGRAM_CHAT_ID=911912421
+HELIUS_API_KEY=           # اختياري - لو فاضي، البوت يستخدم public RPCs
 MIN_BUY_USD=500
 POLL_SECONDS=30
 ```
 
-### 3. الحصول على Telegram Chat ID
-
-1. ابدأ محادثة مع البوت على Telegram وابعث `/start`
-2. افتح @userinfobot على Telegram وابعث أي رسالة
-3. هيبعتلك الـ ID بتاعك (رقم زي `123456789`)
-
-### 4. الحصول على Helius API Key
-
-1. روح https://www.helius.dev/
-2. اعمل Sign up (مجاني)
-3. اعمل Dashboard → APIs → Create API Key
-4. انسخ الـ key وحطه في `.env`
-
-### 5. تشغيل البوت
-
-```bash
-python bot.py
-```
-
-هتلاقي رسالة على Telegram بتأكد إن البوت اشتغل ✅
-
-## إدارة المحافظ
-
-من Telegram مباشرة:
+## 🎛️ أوامر Telegram
 
 ```
-/list                      # عرض كل المحافظ
+/list                      # عرض كل المحافظ المتابعة
 /add <address> <name>      # إضافة محفظة
 /remove <address>          # حذف محفظة
 /stats                     # إحصائيات
 /help                      # المساعدة
 ```
 
-ولإضافة محافظ افتراضية دائمة، عدل ملف `whales.py`.
+## 🐋 إزاي تلاقي محافظ حيتان شغالة؟
 
-## إزاي تلاقي محافظ حيتان شغالة؟
+### 1. من Fomo.family (لو عندك حساب)
+- شوف الـ Leaderboard
+- افتح بروفايل أي متداول
+- انسخ الـ wallet address
 
-### الطريقة الأسهل: Cielo Finance
-1. روح https://cielo.finance
-2. افتح "Memes" → "Top Traders" على Solana
-3. شوف المحافظ اللي عندها PnL عالي في آخر 7 أيام
-4. انسخ الـ address وضيفه بالأمر `/add`
+### 2. من Cielo Finance
+- https://cielo.finance/markets/solana/memecoins
+- شوف "Top Traders" لأي عملة
 
-### من Solscan
-1. روح https://solscan.io
-2. افتح أي عملة meme coin (مثلاً BONK أو WIF)
-3. شوف الـ Holders → رتب حسب الكمية
-4. المحافظ الكبيرة (1%+) = حيتان
+### 3. من Solscan
+- https://solscan.io
+- افتح أي meme coin (مثل KINS, BONK, WIF)
+- شوف الـ Holders → رتب حسب الكمية
 
-### من Twitter
-حسابات بتتابع محافظ الحيتان:
+### 4. من Twitter
 - @lookonchain
-- @scam_sniffer (لكن ده للـ scams)
 - @solwhalesbot
 
-## شكل الإشعار
+## 📊 شكل الإشعار
 
 ```
 🐋 حوت اشترى!
@@ -104,103 +94,74 @@ python bot.py
 👤 الحوت: Whale Alpha 1
 📝 حوت Pump.fun معروف
 
-🪙 العملة: PEPE - Pepe Coin 🆕 جديده! (3 ساعة)
+🪙 العملة: KINS - Kintara 🆕 جديده! (3 ساعة)
 💰 قيمة الشراء: $12,500 (68.4 SOL)
-📊 السعر: $0.00000123
-💧 السيولة: $245,000
-📈 الحجم 24h: $1.2M
-🏷️ Market Cap: $5.4M
-🔗 DEX: raydium
+📊 السعر: $0.01403
+💧 السيولة: $420,000
+📈 الحجم 24h: $870,000
+🏷️ Market Cap: $14M
+🔗 DEX: pumpswap
 
 🔗 DexScreener | Solscan TX
 🏦 المحفظة
 ```
 
-## استضافة البوت 24/7
-
-### الخيار 1: على جهازك (بسيط)
-شغله وخلينه شغال. لو القفل، البوت يقف.
-
-### الخيار 2: VPS (موصى به)
-أي VPS رخيص:
-- **Hetzner CX11**: €3.29/شهر (موصى به)
-- **DigitalOcean Droplet**: $4/شهر
-- **Vultr**: $2.5/شهر
+## 🐳 أوامر Docker
 
 ```bash
-# على VPS
-git clone <repo>
-cd telegram-whale-bot
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
+# تشغيل
+docker compose up -d --build
 
-# تشغيل بـ tmux علشان يفضل شغال حتى بعد القفل
-tmux new -s whale
-python bot.py
-# Ctrl+B ثم D للخروج من الـ tmux
+# وقف
+docker compose down
+
+# ريستارت
+docker compose restart
+
+# logs
+docker compose logs -f
+
+# تحديث الكود
+git pull && docker compose up -d --build
 ```
 
-### الخيار 3: systemd (للتشغيل التلقائي بعد الإعادة)
-```bash
-sudo nano /etc/systemd/system/whale-bot.service
-```
-```ini
-[Unit]
-Description=Whale Tracker Bot
-After=network.target
+## 🛠️ Multi-RPC System
 
-[Service]
-User=ubuntu
-WorkingDirectory=/home/ubuntu/telegram-whale-bot
-ExecStart=/home/ubuntu/telegram-whale-bot/venv/bin/python bot.py
-Restart=always
-RestartSec=10
+البوت بيستخدم 5 RPC endpoints بالتوازي:
 
-[Install]
-WantedBy=multi-user.target
-```
-```bash
-sudo systemctl enable whale-bot
-sudo systemctl start whale-bot
-sudo systemctl status whale-bot  # للتأكد
-```
+1. **Solana Official** (api.mainnet-beta.solana.com) - 40 req/sec
+2. **Triton Public** (solana-mainnet.rpc.extrnode.com)
+3. **Ankr Public** (rpc.ankr.com/solana)
+4. **Alchemy Demo** (solana-mainnet.g.alchemy.com)
+5. **Helius** (لو حطيت API key) - أقوى وأسرع
 
-## ملاحظات مهمة
+لو endpoint وقع، البوت ينتقل تلقائياً للـ التالي. كده البوت مش هيوقف أبداً.
 
-1. **Helius Free Tier**: 100K ريكوست شهرياً. كل فحص لمحفظة بياخد ~6-7 ريكسات، يعني 50 محفظة كل 30 ثانية = ~720K ريكس/يوم. **لو هتابع كتير، ترقية لـ $49/شهر**.
+## ⚠️ ملاحظات
 
-2. **الدقة**: مش كل معاملة هتتبعت كـ "شراء". ممكن بعضها يكون routing معقد من Jupiter. لو لقيت إشعارات غلط، ارفع `MIN_BUY_USD`.
+1. **Public RPC rate limit**: تقدر تراقب 20-30 محفظة كل 30 ثانية بدون مشاكل
+2. **لو حابب تراقب أكتر**: سجل في Helius ($0 للأول 100K ريكوست)
+3. **الدقة**: مش كل معاملة هتتبعت كـ "شراء". ممكن بعضها يكون routing معقد
+4. **المخاطر**: متشتريش على أساس إشعار الحوت بس. الحيتان بتفشل برضه
 
-3. **المخاطر**: متشتريش على أساس إشعار الحوت بس. الحيتان بتفشل برضه. اعمل بحثك.
-
-4. **التوكن في `.env`**: متشاركوش مع حد ومترفعهوش على GitHub.
-
-## استكشاف الأخطاء
-
-| المشكلة | الحل |
-|---------|------|
-| "TELEGRAM_CHAT_ID غير موجود" | ابدأ محادثة مع البوت وبعت /start، ثم استخدم @userinfobot |
-| "HELIUS_API_KEY غير موجود" | سجل في helius.dev وانسخ الـ key |
-| البوت شغال بس مفيش إشعارات | تأكد إن المحافظ بتاعة الحيتان فيها نشاط (شوفها على solscan.io) |
-| إشعارات بطيئة | قلل `POLL_SECONDS` لـ 15 |
-| كتير Rate limit من Helius | زود `POLL_SECONDS` أو رقّي خطة Helius |
-
-## ملفات المشروع
+## 📁 ملفات المشروع
 
 ```
-telegram-whale-bot/
+whale-bot/
 ├── bot.py              # الكود الرئيسي
 ├── whales.py           # قائمة المحافظ الافتراضية
 ├── requirements.txt    # متطلبات Python
+├── Dockerfile          # لتشغيل Docker
+├── docker-compose.yml  # إعدادات Docker
 ├── .env                # إعداداتك (سرّي!)
 └── README.md           # هذا الملف
 ```
 
-## الخطوة الجاية (اختياري)
+## 🆘 استكشاف الأخطاء
 
-لو حابب توسع البوت:
-- إضافة تنبيهات التجميع (3 حيتان يشتروا نفس العملة في 6 ساعات = 🔥 تجميع)
-- دعم BSC (لمحافظ CZ)
-- إضافة RPC backup لو Helius وقع
-- تحليل PnL للحوت (هل هو رابح في آخر صفقاته؟)
+| المشكلة | الحل |
+|---------|------|
+| البوت شغال بس مفيش إشعارات | تأكد إن المحافظ فيها نشاط (شوفها على solscan.io) |
+| Rate limit من RPC | زود `POLL_SECONDS` لـ 60 أو سجل في Helius |
+| إشعارات بطيئة | قلل `POLL_SECONDS` لـ 15 أو أضف Helius |
+| Docker مش شغال | `docker compose logs` للتشخيص |
