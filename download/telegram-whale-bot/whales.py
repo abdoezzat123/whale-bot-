@@ -321,7 +321,7 @@ SOLANA_WHALES = [
     # عمل ANSEM ($89M) - 16x في يوم
     # عمل 27 meme coin في 11 يوم
     {
-        "name": "🏆 ANSEM (Famous Dev) 🔥",
+        "name": "🏆 Ansem",
         "address": "AVAZvHLR2PcWpDf8BXY4rVxNHYRBytycHkcB5z5QNXYm",
         "note": "🏆 ANSEM - أشهر مطور Solana! عمل ANSEM (16x في يوم). اشترى 74 token.",
         "source": "FAMOUS_DEV",
@@ -331,21 +331,21 @@ SOLANA_WHALES = [
     # 2. Murad Mahmudov - $24M portfolio
     # ZachXBT كشف محافظه (11 محفظة)
     {
-        "name": "🏆 MURAD #1 (Famous Dev) 🔥",
+        "name": "🏆 Murad",
         "address": "2xn57hPD2v6ighJFPXNPSoiGUXkW4KKo8Hb3NpXmHZvZ",
         "note": "🏆 Murad Mahmudov - $24M portfolio! ZachXBT كشف محافظه. نشط شهري.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 MURAD #2 (Famous Dev) 🔥",
+        "name": "🏆 Murad",
         "address": "GyBkVYkHBPMapyQeueQ6d44YthwqYiX4ajgnGLqq9P7r",
         "note": "🏆 Murad Mahmudov - محفظة 2. نشط شهري.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 MURAD #3 (Famous Dev) 🔥",
+        "name": "🏆 Murad",
         "address": "7QZGS7MQ4S6hRmE8iXoFTXgQ2hXVUCho2ZhgeWvLNPZT",
         "note": "🏆 Murad Mahmudov - محفظة 3. 🔥 نشط جداً (آخر معاملة الآن)!",
         "source": "FAMOUS_DEV",
@@ -357,56 +357,56 @@ SOLANA_WHALES = [
     # كلهم معروفين بأرباح ضخمة في meme coins
     # =========================================================
     {
-        "name": "🏆 Smart #1 (Mundi 2580x) 🔥",
+        "name": "🏆 Mundi Trader (2580x)",
         "address": "5ow9M5AZUDUm3p3PAeBYMA8g2n65fKRMrfdbqEyE2b6U",
         "note": "🏆 Lookonchain Smart Trader - حول 1 SOL ($169) لـ $435K (2580x)!",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #2 (Pnut Catcher) 🔥",
+        "name": "🏆 Pnut Trader",
         "address": "GmM5UFm8xu6TnZD7avwYcQ1zq25hD5yvHfYyAksHu9vB",
         "note": "🏆 Lookonchain - اشترى Pnut بدري. 🔥 نشط (13 دقيقة)!",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #3 ($7.5M profit) 🔥",
+        "name": "🏆 $7.5M Profit Trader",
         "address": "3cBB2ZyoNy8YEquSSzR2Rpggp9vcrfz4NcbCKHp7BzvT",
         "note": "🏆 Lookonchain - حقق $7.5M أرباح!",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #4 (Active) 🔥",
+        "name": "🏆 Lookonchain Trader",
         "address": "CWvdyvKHEu8Z6QqGraJT3sLPyp9bJfFhoXcxUYRKC8ou",
         "note": "🏆 Lookonchain Smart Trader - نشط يومي.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #5 (Active NOW) 🔥",
+        "name": "🏆 Lookonchain Trader",
         "address": "DfMxre4cKmvogbLrPigxmibVTTQDuzjdXojWzjCXXhzj",
         "note": "🏆 Lookonchain Smart Trader - 🔥 نشط جداً (الآن)!",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #6 🔥",
+        "name": "🏆 Lookonchain Trader",
         "address": "5mtbmPwj2SMkxPP9c93s9oD9bmMdByTqepNarM9Y7u7e",
         "note": "🏆 Lookonchain Smart Trader - نشط أسبوعي.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #7 (Mundi) 🔥",
+        "name": "🏆 Mundi Trader",
         "address": "Chbkocicvare18YDjKYRSXNC1AdUNzKtV5n1ZCxGYSMQ",
         "note": "🏆 Lookonchain - اشترى Mundi بدري (2580x).",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 Smart #8 (URO) 🔥",
+        "name": "🏆 URO Trader",
         "address": "2cyYy2zPyThCJAVcD4JhqnTWnsTVSVJe55Gw3NrPKBf8",
         "note": "🏆 Lookonchain - اشترى URO بدري.",
         "source": "FAMOUS_DEV",
@@ -623,21 +623,21 @@ ETH_WHALES = [
     # محافظ نشطة من الـ 11 اللي كشفهم ZachXBT
     # =========================================================
     {
-        "name": "🏆 MURAD ETH #1 (Famous Dev) 🔥",
+        "name": "🏆 Murad (ETH)",
         "address": "0x997a58129890bbda032231a52ed1ddc845fc18e1",
         "note": "🏆 Murad Mahmudov على ETH - $24M portfolio. نشط شهري.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 MURAD ETH #2 (Famous Dev) 🔥",
+        "name": "🏆 Murad (ETH)",
         "address": "0x8b194370825e37b33373e74a41009161808c1488",
         "note": "🏆 Murad Mahmudov على ETH - نشط يومي! آخر معاملة اليوم.",
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
     {
-        "name": "🏆 MURAD ETH #3 (Famous Dev) 🔥",
+        "name": "🏆 Murad (ETH)",
         "address": "0x7ec43cf65f1663f820427c62a5780b8f2e25593a",
         "note": "🏆 Murad Mahmudov على ETH - نشط أسبوعي.",
         "source": "FAMOUS_DEV",
