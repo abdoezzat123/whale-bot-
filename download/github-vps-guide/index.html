@@ -1,0 +1,713 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<title>دليل رفع البوت على GitHub و تشغيله على VPS</title>
+<style>
+  * { box-sizing: border-box; -webkit-print-color-adjust: exact; print-color-adjust: exact; }
+  body {
+    font-family: 'Noto Sans Arabic', 'Segoe UI', Tahoma, sans-serif;
+    margin: 0; padding: 0; color: #1a1a2e; background: #fff;
+    line-height: 1.8; font-size: 15px;
+  }
+  .cover {
+    background: linear-gradient(135deg, #24292e 0%, #586069 50%, #0366d6 100%);
+    color: white; padding: 80px 50px; text-align: center;
+    page-break-after: always; min-height: 100vh;
+    display: flex; flex-direction: column; justify-content: center;
+  }
+  .cover h1 { font-size: 42px; margin: 0 0 20px; line-height: 1.3; text-shadow: 2px 2px 10px rgba(0,0,0,0.3); }
+  .cover .subtitle { font-size: 22px; opacity: 0.95; margin-bottom: 40px; }
+  .cover .bot-info {
+    background: rgba(255,255,255,0.15); padding: 25px 30px;
+    border-radius: 15px; margin-top: 30px; max-width: 600px;
+    margin-left: auto; margin-right: auto; backdrop-filter: blur(10px);
+    border: 1px solid rgba(255,255,255,0.3);
+  }
+  .cover .bot-info ul { text-align: right; padding-right: 25px; margin: 0; }
+  .cover .bot-info li { margin-bottom: 8px; font-size: 16px; }
+  .container { max-width: 900px; margin: 0 auto; padding: 40px 50px; }
+  h2 {
+    color: #24292e; border-right: 6px solid #0366d6;
+    padding-right: 18px; margin-top: 50px; margin-bottom: 25px;
+    font-size: 28px; page-break-after: avoid;
+  }
+  h3 { color: #0366d6; margin-top: 35px; margin-bottom: 15px; font-size: 20px; page-break-after: avoid; }
+  p { margin: 12px 0; text-align: justify; }
+  ul, ol { padding-right: 30px; }
+  li { margin-bottom: 10px; }
+  .step {
+    background: #f6f8fa; border: 1px solid #e1e4f5;
+    border-right: 5px solid #0366d6; border-radius: 10px;
+    padding: 25px 30px; margin: 25px 0; page-break-inside: avoid;
+  }
+  .step-number {
+    display: inline-block; background: linear-gradient(135deg, #24292e, #0366d6);
+    color: white; width: 40px; height: 40px; border-radius: 50%;
+    text-align: center; line-height: 40px; font-weight: bold;
+    margin-left: 15px; font-size: 18px;
+  }
+  .step-title {
+    display: inline-block; vertical-align: middle;
+    font-size: 20px; font-weight: bold; color: #24292e;
+  }
+  .step-content { margin-top: 15px; }
+  .img-wrapper { text-align: center; margin: 25px 0; page-break-inside: avoid; }
+  .img-wrapper img {
+    max-width: 100%; border: 2px solid #e1e4f5; border-radius: 10px;
+    box-shadow: 0 4px 20px rgba(0,0,0,0.08);
+  }
+  .img-caption { color: #666; font-size: 13px; margin-top: 8px; font-style: italic; }
+  pre {
+    background: #24292e; color: #f6f8fa; padding: 20px;
+    border-radius: 10px; overflow-x: auto; direction: ltr;
+    text-align: left; font-family: 'Courier New', monospace;
+    font-size: 13px; line-height: 1.6; page-break-inside: avoid;
+    border-right: 4px solid #0366d6;
+  }
+  code {
+    background: #f0f4ff; color: #0366d6; padding: 2px 8px;
+    border-radius: 4px; font-family: 'Courier New', monospace;
+    font-size: 13px; direction: ltr; display: inline-block;
+  }
+  .warning {
+    background: #fff3cd; border-right: 5px solid #ffc107;
+    border-radius: 10px; padding: 20px 25px; margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .warning::before {
+    content: "⚠️ تحذير"; display: block; font-weight: bold;
+    color: #856404; font-size: 18px; margin-bottom: 8px;
+  }
+  .tip {
+    background: #d4edda; border-right: 5px solid #28a745;
+    border-radius: 10px; padding: 20px 25px; margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .tip::before {
+    content: "✅ نصيحة"; display: block; font-weight: bold;
+    color: #155724; font-size: 18px; margin-bottom: 8px;
+  }
+  .info {
+    background: #d1ecf1; border-right: 5px solid #17a2b8;
+    border-radius: 10px; padding: 20px 25px; margin: 20px 0;
+    page-break-inside: avoid;
+  }
+  .info::before {
+    content: "ℹ️ ملاحظة"; display: block; font-weight: bold;
+    color: #0c5460; font-size: 18px; margin-bottom: 8px;
+  }
+  .toc {
+    background: #f6f8fa; border: 1px solid #e1e4f5;
+    border-radius: 15px; padding: 30px 40px; margin: 30px 0;
+    page-break-after: always;
+  }
+  .toc h2 { border: none; text-align: center; color: #24292e; margin-top: 0; }
+  .toc ol { counter-reset: toc; list-style: none; padding: 0; }
+  .toc li {
+    counter-increment: toc; padding: 12px 0;
+    border-bottom: 1px dashed #e1e4f5; font-size: 16px;
+  }
+  .toc li::before {
+    content: counter(toc) "."; color: #0366d6;
+    font-weight: bold; font-size: 18px; margin-left: 10px;
+  }
+  table { width: 100%; border-collapse: collapse; margin: 20px 0; page-break-inside: avoid; }
+  th, td { border: 1px solid #e1e4f5; padding: 12px 15px; text-align: right; }
+  th { background: #24292e; color: white; }
+  tr:nth-child(even) { background: #f6f8fa; }
+  .final-page {
+    text-align: center; padding: 80px 40px;
+    background: linear-gradient(135deg, #24292e, #0366d6);
+    color: white; margin-top: 50px; page-break-before: always;
+    border-radius: 15px;
+  }
+  .final-page h2 { color: white; border: none; text-align: center; font-size: 36px; }
+  .final-page p { font-size: 18px; opacity: 0.95; }
+  @page { size: A4; margin: 1.5cm; }
+</style>
+</head>
+<body>
+
+<!-- Cover -->
+<div class="cover">
+  <h1>🚀 دليل رفع البوت على GitHub وتشغيله على VPS</h1>
+  <div class="subtitle">خطوة بخطوة من الجهاز للسيرفر</div>
+
+  <div class="bot-info">
+    <h3>🐋 بوت تتبع الحيتان</h3>
+    <ul>
+      <li>رفع المشروع على GitHub</li>
+      <li>توليد Personal Access Token</li>
+      <li>الاتصال بالـ VPS (AWS/Oracle)</li>
+      <li>تنزيل وتشغيل البوت بـ Docker</li>
+      <li>كل الخطوات مصورة</li>
+    </ul>
+  </div>
+  <p style="margin-top: 40px; opacity: 0.85; font-size: 16px;">
+    دليل كامل من الصفر للإنتاج 24/7
+  </p>
+</div>
+
+<!-- TOC -->
+<div class="container">
+  <div class="toc">
+    <h2>📑 الفهرس</h2>
+    <ol>
+      <li>تجهيز ملفات المشروع على جهازك</li>
+      <li>إنشاء حساب GitHub (لو معندكش)</li>
+      <li>إنشاء repository جديد</li>
+      <li>توليد Personal Access Token (PAT)</li>
+      <li>رفع الملفات على GitHub</li>
+      <li>الاتصال بالـ VPS بـ SSH</li>
+      <li>تنزيل المشروع على الـ VPS (git clone)</li>
+      <li>ضبط ملف .env على الـ VPS</li>
+      <li>تشغيل البوت بـ Docker</li>
+      <li>التحكم في البوت (أوامر)</li>
+      <li>مشاكل شائعة وحلولها</li>
+    </ol>
+  </div>
+
+  <!-- Section 1 -->
+  <h2>1️⃣ تجهيز ملفات المشروع على جهازك</h2>
+
+  <p>عندك ملفات البوت في فولدر واحد. تأكد إن فيه الملفات دي:</p>
+
+  <pre><code>telegram-whale-bot/
+├── bot.py                  # الكود الرئيسي
+├── bsc_monitor.py          # مراقب BSC
+├── whales.py               # محافظ الحيتان
+├── deploy.sh               # سكريبت التحكم
+├── Dockerfile              # إعدادات Docker
+├── docker-compose.yml      # يشغل البوتين
+├── requirements.txt        # متطلبات Python
+├── .env                    # الإعدادات (سرّي!)
+├── .dockerignore
+└── README.md</code></pre>
+
+  <div class="warning">
+    <strong>مهم جداً:</strong> ملف <code>.env</code> فيه الـ Telegram Bot Token و Chat ID - ده سرّي!
+    لازم نضيفه لـ <code>.gitignore</code> علشان ما يترفعش على GitHub.
+  </div>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">إنشاء ملف .gitignore</span>
+    <div class="step-content">
+      <p>افتح Terminal/CMD في فولدر المشروع واكتب:</p>
+      <pre><code># إنشاء ملف .gitignore
+cat &gt; .gitignore &lt;&lt; 'EOF'
+.env
+*.db
+data/
+__pycache__/
+*.pyc
+venv/
+.venv/
+.vscode/
+.idea/
+.DS_Store
+*.log
+EOF</code></pre>
+      <p>أو أنشئه يدوياً بأي محرر نصوص وحط فيه المحتوى فوق.</p>
+    </div>
+  </div>
+
+  <!-- Section 2 -->
+  <h2>2️⃣ إنشاء حساب GitHub (لو معندكش)</h2>
+
+  <p>لو عندك حساب GitHub، اتخطى للقسم 3. لو لأ:</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح GitHub وسجل</span>
+    <div class="step-content">
+      <p>ادخل على: <code>https://github.com/signup</code></p>
+      <ul>
+        <li>الإيميل</li>
+        <li>باسورد قوي</li>
+        <li>username (هتستخدمه في الـ repo URL)</li>
+      </ul>
+      <p>هيوصلك كود تحقق على الإيميل - أكد الحساب.</p>
+    </div>
+  </div>
+
+  <!-- Section 3 -->
+  <h2>3️⃣ إنشاء repository جديد</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح GitHub ودوس "New"</span>
+    <div class="step-content">
+      <p>بعد ما تسجل دخول:</p>
+      <ul>
+        <li>دوس على <strong>+</strong> فوق على اليمين</li>
+        <li>اختر <strong>"New repository"</strong></li>
+      </ul>
+
+      <div class="img-wrapper">
+        <img src="images/01_github_repo.png" alt="GitHub create repo">
+        <div class="img-caption">صفحة إنشاء repository جديد على GitHub</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">املأ بيانات الـ repo</span>
+    <div class="step-content">
+      <ul>
+        <li><strong>Repository name:</strong> <code>whale-bot</code></li>
+        <li><strong>Description:</strong> <code>Solana + BSC whale tracker bot</code> (اختياري)</li>
+        <li><strong>Visibility:</strong> اختار <strong>Private</strong> (مهم! علشان الكود سرّي)</li>
+        <li>دوس <strong>"Create repository"</strong></li>
+      </ul>
+
+      <div class="warning">
+        اختار <strong>Private</strong> مش Public! الكود فيه الـ bot token والـ chat ID لو اترفع خطأ.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 4 -->
+  <h2>4️⃣ توليد Personal Access Token (PAT)</h2>
+
+  <p>علشان ترفع الكود من Terminal/CMD، GitHub محتاج token بدل الباسورد.</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح Settings</span>
+    <div class="step-content">
+      <ul>
+        <li>دوس على صورتك فوق على اليمين</li>
+        <li>اختر <strong>Settings</strong></li>
+        <li>انزل تحت واختر <strong>Developer settings</strong> (آخر خيار)</li>
+        <li>اختر <strong>Personal access tokens → Tokens (classic)</strong></li>
+        <li>دوس <strong>"Generate new token (classic)"</strong></li>
+      </ul>
+
+      <div class="img-wrapper">
+        <img src="images/03_token.png" alt="GitHub token">
+        <div class="img-caption">صفحة توليد Personal Access Token</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اضبط الـ token</span>
+    <div class="step-content">
+      <ul>
+        <li><strong>Note:</strong> <code>whale-bot-deploy</code></li>
+        <li><strong>Expiration:</strong> 90 days (أو No expiration)</li>
+        <li><strong>Scopes:</strong> علم على <code>✓ repo</code> (كل الـ sub-options)</li>
+        <li>دوس <strong>"Generate token"</strong> في آخر الصفحة</li>
+      </ul>
+
+      <div class="warning">
+        <strong>انسخ الـ token فوراً!</strong> مش هتقدر تشوفه تاني بعد كده.
+        الـ token شكله زي: <code>ghp_xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx</code>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 5 -->
+  <h2>5️⃣ رفع الملفات على GitHub</h2>
+
+  <p>عندك طريقتين: <strong>Git CLI</strong> (للمتقدمين) أو <strong>الرفع من المتصفح</strong> (للمبتدئين).</p>
+
+  <h3>🅰️ الطريقة الأولى: الرفع من المتصفح (الأسهل)</h3>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح الـ repo اللي عملته</span>
+    <div class="step-content">
+      <p>هتلاقي زرار <strong>"uploading an existing file"</strong> - دوس عليه.</p>
+
+      <div class="img-wrapper">
+        <img src="images/02_upload_files.png" alt="Upload files">
+        <div class="img-caption">صفحة رفع الملفات على GitHub</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اسحب كل الملفات</span>
+    <div class="step-content">
+      <p>اسحب كل الملفات من فولدر المشروع (ما عدا <code>.env</code> و <code>data/</code>) للمنطقة المنقطة.</p>
+      <p>أو دوس <strong>"choose your files"</strong> واختارها.</p>
+      <p>بعد ما ترفع كل الملفات، دوس <strong>"Commit changes"</strong> تحت.</p>
+
+      <div class="warning">
+        <strong>مترفعش ملف <code>.env</code>!</strong> ده فيه الـ Bot Token و Chat ID.
+        هنظبطه على الـ VPS مباشرة.
+      </div>
+    </div>
+  </div>
+
+  <h3>🅱️ الطريقة الثانية: Git CLI (الأسرع والأنظف)</h3>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">تثبيت Git (لو مش متثبت)</span>
+    <div class="step-content">
+      <p><strong>Windows:</strong> نزله من <code>https://git-scm.com</code></p>
+      <p><strong>Mac:</strong> <code>brew install git</code></p>
+      <p><strong>Linux:</strong> <code>sudo apt install git</code></p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">إعداد Git مرة واحدة</span>
+    <div class="step-content">
+      <pre><code>git config --global user.name "اسمك"
+git config --global user.email "إيميلك@example.com"</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">رفع المشروع</span>
+    <div class="step-content">
+      <p>افتح Terminal/CMD في فولدر المشروع واكتب:</p>
+      <pre><code># 1. تهيئة git
+git init
+
+# 2. إضافة كل الملفات (ما عدا اللي في .gitignore)
+git add .
+
+# 3. أول commit
+git commit -m "Initial commit - whale bot"
+
+# 4. تحديد الـ branch
+git branch -M main
+
+# 5. ربط بالـ repo (غير USERNAME باسمك)
+git remote add origin https://github.com/USERNAME/whale-bot.git
+
+# 6. رفع الكود
+git push -u origin main</code></pre>
+
+      <p>أول مرة هيطلب منك username و password. الـ username هو GitHub username، والـ password هو الـ <strong>Token</strong> اللي عملته في القسم 4.</p>
+
+      <div class="tip">
+        لو ظهرلك خطأ <code>Authentication failed</code>: استخدم الـ Token مش الباسورد في خانة الـ password.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 6 -->
+  <h2>6️⃣ الاتصال بالـ VPS بـ SSH</h2>
+
+  <p>دلوقتي البوت على GitHub. لازم نروح للـ VPS وننزله هناك.</p>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">افتح Terminal</span>
+    <div class="step-content">
+      <p><strong>Mac/Linux:</strong> افتح Terminal</p>
+      <p><strong>Windows 10+:</strong> افتح PowerShell أو CMD</p>
+      <p><strong>Windows قديم:</strong> استخدم PuTTY</p>
+
+      <div class="img-wrapper">
+        <img src="images/04_ssh_terminal.png" alt="SSH terminal">
+        <div class="img-caption">الاتصال بـ SSH على Terminal</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">اتصل بالـ VPS</span>
+    <div class="step-content">
+      <p><strong>AWS EC2 (Ubuntu):</strong></p>
+      <pre><code>ssh -i ~/Downloads/your-key.pem ubuntu@YOUR_PUBLIC_IP</code></pre>
+
+      <p><strong>AWS EC2 (Amazon Linux):</strong></p>
+      <pre><code>ssh -i ~/Downloads/your-key.pem ec2-user@YOUR_PUBLIC_IP</code></pre>
+
+      <p><strong>Oracle Cloud:</strong></p>
+      <pre><code>ssh -i ~/Downloads/ssh-key-xxxx.key ubuntu@YOUR_PUBLIC_IP</code></pre>
+
+      <p>أول مرة هيطلب منك تأكيد - اكتب <code>yes</code> واضغط Enter.</p>
+
+      <div class="info">
+        الـ prompt هيغير لـ <code>ubuntu@ip-xxx-xx-xx-xx:~$</code> - ده معناه إنك اتصلت بنجاح.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 7 -->
+  <h2>7️⃣ تنزيل المشروع على الـ VPS (git clone)</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">ثبت Git و Docker</span>
+    <div class="step-content">
+      <pre><code># تحديث النظام
+sudo apt update &amp;&amp; sudo apt upgrade -y
+
+# تثبيت Git
+sudo apt install -y git
+
+# تثبيت Docker
+curl -fsSL https://get.docker.com | sudo sh
+
+# إضافة المستخدم لمجموعة docker (علشان ما نستخدمش sudo كل مرة)
+sudo usermod -aG docker $USER
+
+# تفعيل التغيير
+newgrp docker</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">تنزيل المشروع من GitHub</span>
+    <div class="step-content">
+      <p>لو الـ repo <strong>Private</strong> (موصى به):</p>
+      <pre><code># تنزيل المشروع (ستبدل USERNAME و TOKEN)
+git clone https://USERNAME:TOKEN@github.com/USERNAME/whale-bot.git
+
+# مثال:
+git clone https://ayaodo:ghp_xxxxx@github.com/ayaodo/whale-bot.git
+
+# الدخول للفولدر
+cd whale-bot</code></pre>
+
+      <p>لو الـ repo <strong>Public</strong>:</p>
+      <pre><code>git clone https://github.com/USERNAME/whale-bot.git
+cd whale-bot</code></pre>
+
+      <div class="img-wrapper">
+        <img src="images/05_git_clone.png" alt="Git clone">
+        <div class="img-caption">تنزيل المشروع على الـ VPS</div>
+      </div>
+
+      <div class="tip">
+        طريقة تانية للـ Private repo بدون token في URL:
+        <pre><code>git clone https://github.com/USERNAME/whale-bot.git
+# هيطلب username = GitHub username
+# password = الـ Token</code></pre>
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 8 -->
+  <h2>8️⃣ ضبط ملف .env على الـ VPS</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">إنشاء ملف .env</span>
+    <div class="step-content">
+      <p>على الـ VPS، داخل فولدر المشروع:</p>
+      <pre><code>nano .env</code></pre>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">احط المحتوى ده</span>
+    <div class="step-content">
+      <pre><code># Telegram
+TELEGRAM_BOT_TOKEN=8688639320:AAHw_CthYwmNDBcYwKnuIbT_MOSAxLrkcCM
+TELEGRAM_CHAT_ID=911912421
+
+# Helius (اختياري - سيبه فاضي لو مش معاك)
+HELIUS_API_KEY=
+
+# إعدادات عامة
+MIN_BUY_USD=500
+POLL_SECONDS=5
+BSC_POLL_SECONDS=10
+
+# إعدادات التجميع
+ACCUMULATION_THRESHOLD=3
+ACCUMULATION_WINDOW_HOURS=6
+ACCUMULATION_COOLDOWN_HOURS=3</code></pre>
+      <p>للحفظ: <code>Ctrl+O</code> → <code>Enter</code> → <code>Ctrl+X</code></p>
+    </div>
+  </div>
+
+  <!-- Section 9 -->
+  <h2>9️⃣ تشغيل البوت بـ Docker</h2>
+
+  <div class="step">
+    <span class="step-number">1</span>
+    <span class="step-title">تشغيل البوت</span>
+    <div class="step-content">
+      <pre><code># تأكد إنك في فولدر المشروع
+cd ~/whale-bot
+
+# تشغيل البوت (solana + BSC) في الـ background
+docker compose up -d --build</code></pre>
+
+      <div class="img-wrapper">
+        <img src="images/06_docker.png" alt="Docker">
+        <div class="img-caption">تشغيل البوت بـ Docker</div>
+      </div>
+
+      <p>أول مرة هتاخد شوية (2-5 دقايق) علشان يعمل build للـ image. بعدها هيبقى سريع.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">2</span>
+    <span class="step-title">شوف الـ logs للتأكد</span>
+    <div class="step-content">
+      <pre><code># شوف الـ logs live
+docker compose logs -f
+
+# أو logs لخدمة معينة
+docker compose logs -f whale-bot-solana
+docker compose logs -f whale-bot-bsc</code></pre>
+
+      <p>لازم تلاقي رسالة زي:</p>
+      <pre><code>whale-bot-solana  | 🚀 البوت اشتغل!
+whale-bot-solana  | 🐋 محافظ متابعة: 10
+whale-bot-solana  | 💰 حد الشراء: $500
+
+whale-bot-bsc     | 🚀 مراقب BSC اشتغل!
+whale-bot-bsc     | 🐋 محافظ BSC متابعة: 3</code></pre>
+
+      <p>وكمان هتلاقي رسالتين على تيليجرام بتأكد إن البوتين اشتغلوا.</p>
+    </div>
+  </div>
+
+  <div class="step">
+    <span class="step-number">3</span>
+    <span class="step-title">الخروج من الـ VPS</span>
+    <div class="step-content">
+      <p>اضغط <code>Ctrl+C</code> للخروج من الـ logs (البوت يفضل شغال في الـ background).</p>
+      <p>اكتب <code>exit</code> للخروج من الـ VPS.</p>
+
+      <div class="tip">
+        البوت هيفضل شغال 24/7 على الـ VPS، حتى لو قفلت جهازك. 
+        كل ما حوت يشتري meme coin، هتوصلك إشعار على تيليجرام.
+      </div>
+    </div>
+  </div>
+
+  <!-- Section 10 -->
+  <h2>🔟 التحكم في البوت (أوامر)</h2>
+
+  <p>كل ما ترجع للـ VPS، تقدر تتحكم في البوت بالأوامر دي:</p>
+
+  <pre><code># الدخول للفولدر
+cd ~/whale-bot
+
+# استخدام سكريبت deploy.sh (الأسهل)
+./deploy.sh status        # حالة البوت
+./deploy.sh logs          # شوف الـ logs live
+./deploy.sh restart       # ريستارت
+./deploy.sh stop          # وقف البوت
+./deploy.sh start         # تشغيل تاني
+./deploy.sh update        # تحديث من GitHub
+./deploy.sh uninstall     # حذف كامل
+
+# أو استخدام docker compose مباشرة
+docker compose ps          # حالة
+docker compose logs -f     # logs
+docker compose restart     # ريستارت
+docker compose down        # وقف
+docker compose up -d       # تشغيل</code></pre>
+
+  <h3>🔁 تحديث الكود بعد ما ترفع تعديلات على GitHub</h3>
+
+  <pre><code># على الـ VPS
+cd ~/whale-bot
+./deploy.sh update
+
+# أو يدوياً
+git pull
+docker compose up -d --build</code></pre>
+
+  <!-- Section 11 -->
+  <h2>1️⃣1️⃣ مشاكل شائعة وحلولها</h2>
+
+  <h3>المشكلة 1: Authentication failed عند الـ git clone</h3>
+  <p><strong>السبب:</strong> الـ Token غلط أو منتهي.</p>
+  <p><strong>الحل:</strong></p>
+  <ul>
+    <li>تأكد إن الـ Token صحيح ومنسوخ بالكامل</li>
+    <li>لو منتهي، روح على GitHub → Settings → Developer settings → Personal access tokens → جدد الـ token</li>
+    <li>تأكد إن الـ token فيه scope <code>repo</code></li>
+  </ul>
+
+  <h3>المشكلة 2: docker compose مش موجود</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code># تثبيت docker compose plugin
+sudo apt install -y docker-compose-plugin
+
+# أو لو مش شغال
+sudo curl -L "https://github.com/docker/compose/releases/latest/download/docker-compose-$(uname -s)-$(uname -m)" -o /usr/local/bin/docker-compose
+sudo chmod +x /usr/local/bin/docker-compose</code></pre>
+
+  <h3>المشكلة 3: permission denied على deploy.sh</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code>chmod +x deploy.sh
+./deploy.sh</code></pre>
+
+  <h3>المشكلة 4: البوت شغال بس مفيش إشعارات</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code># شوف الـ logs
+docker compose logs -f whale-bot-solana
+
+# لو فيه أخطاء في Telegram
+# - تأكد إن TELEGRAM_CHAT_ID صحيح
+# - تأكد إن TELEGRAM_BOT_TOKEN صحيح
+# - ابعت /start للبوت الأول على تيليجرام
+
+# لو فيه أخطاء في RPC
+# - البوت هيستخدم public RPC تلقائياً</code></pre>
+
+  <h3>المشكلة 5: Docker requires sudo</h3>
+  <p><strong>الحل:</strong></p>
+  <pre><code>sudo usermod -aG docker $USER
+newgrp docker
+# أو اعمل logout و login تاني</code></pre>
+
+  <h3>المشكلة 6: البوت وقع بعد الإعادة</h3>
+  <p><strong>الحل:</strong> استخدم systemd (تشغيل تلقائي بعد الإعادة):</p>
+  <pre><code>sudo nano /etc/systemd/system/whale-bot.service</code></pre>
+
+  <pre><code>[Unit]
+Description=Whale Bot
+After=docker.service
+Requires=docker.service
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+WorkingDirectory=/home/ubuntu/whale-bot
+ExecStart=/usr/bin/docker compose up -d
+ExecStop=/usr/bin/docker compose down
+TimeoutStartSec=0
+
+[Install]
+WantedBy=multi-user.target</code></pre>
+
+  <pre><code>sudo systemctl daemon-reload
+sudo systemctl enable whale-bot
+sudo systemctl start whale-bot</code></pre>
+
+  <!-- Final -->
+  <div class="final-page">
+    <h2>🎉 مبروك!</h2>
+    <p style="font-size: 20px; margin-top: 30px;">
+      البوت شغال 24/7 على الـ VPS
+    </p>
+    <p style="opacity: 0.9;">
+      دلوقتي هتوصلك إشعارات فورية على موبايلك كل ما حوت يشتري meme coin 🐋
+    </p>
+    <p style="margin-top: 40px; opacity: 0.7; font-size: 14px;">
+      للدعم الفني: راجع قسم "مشاكل شائعة" أو ابعت /help للبوت على تيليجرام
+    </p>
+  </div>
+
+</div>
+
+</body>
+</html>
