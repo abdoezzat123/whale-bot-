@@ -1,17 +1,42 @@
 version: '3.8'
 
 services:
-  whale-bot:
+  # بوت Solana الرئيسي
+  whale-bot-solana:
     build: .
-    container_name: whale-bot
+    container_name: whale-bot-solana
     restart: always
     env_file:
       - .env
     volumes:
-      # حفظ الـ database خارج الـ container علشان ما يضيعش
-      - ./data:/app/data
+      # حفظ الـ database خارج الـ container
+      - ./data/solana:/app/data
     logging:
       driver: "json-file"
       options:
         max-size: "10m"
         max-file: "3"
+    networks:
+      - whale-net
+
+  # مراقب BSC (SHIB + FLOKI + CZ)
+  whale-bot-bsc:
+    build: .
+    container_name: whale-bot-bsc
+    restart: always
+    env_file:
+      - .env
+    command: python -u bsc_monitor.py
+    volumes:
+      - ./data/bsc:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - whale-net
+
+networks:
+  whale-net:
+    driver: bridge

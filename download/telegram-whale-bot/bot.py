@@ -67,6 +67,13 @@ logging.basicConfig(
 )
 log = logging.getLogger("whale-bot")
 
+# ==================== إعدادات التجميع ====================
+# 3 حيتان يشتروا نفس العملة في 6 ساعات = إشعار "🔥 تجميع"
+ACCUMULATION_THRESHOLD = int(os.getenv("ACCUMULATION_THRESHOLD", "3"))
+ACCUMULATION_WINDOW_HOURS = int(os.getenv("ACCUMULATION_WINDOW_HOURS", "6"))
+# منع تكرار إشعارات التجميع لنفس العملة (ساعة بين كل إشعار)
+ACCUMULATION_COOLDOWN_HOURS = int(os.getenv("ACCUMULATION_COOLDOWN_HOURS", "3"))
+
 # ==================== قاعدة البيانات ====================
 def init_db():
     conn = sqlite3.connect(DB_PATH)
@@ -81,6 +88,29 @@ def init_db():
             address TEXT PRIMARY KEY,
             name TEXT,
             added_at INTEGER
+        )
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS whale_buys (
+            id INTEGER PRIMARY KEY AUTOINCREMENT,
+            whale_address TEXT NOT NULL,
+            whale_name TEXT,
+            token_address TEXT NOT NULL,
+            token_symbol TEXT,
+            amount_usd REAL,
+            amount_sol REAL,
+            timestamp INTEGER NOT NULL,
+            signature TEXT
+        )
+    """)
+    conn.execute("""
+        CREATE INDEX IF NOT EXISTS idx_buys_token
+            ON whale_buys(token_address, timestamp)
+    """)
+    conn.execute("""
+        CREATE TABLE IF NOT EXISTS accumulation_alerts (
+            token_address TEXT PRIMARY KEY,
+            last_alert_at INTEGER
         )
     """)
     conn.commit()
@@ -119,6 +149,82 @@ def list_user_whales() -> List[Dict]:
     rows = conn.execute("SELECT address, name FROM user_whales").fetchall()
     conn.close()
     return [{"address": r[0], "name": r[1]} for r in rows]
+
+
+# ==================== دوال التجميع ====================
+def log_whale_buy(whale_address: str, whale_name: str, token_address: str,
+                  token_symbol: str, amount_usd: float, amount_sol: float,
+                  signature: str, timestamp: int):
+    """تسجيل عملية شراء حوت في قاعدة البيانات"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """INSERT INTO whale_buys
+           (whale_address, whale_name, token_address, token_symbol,
+            amount_usd, amount_sol, timestamp, signature)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+        (whale_address, whale_name, token_address, token_symbol,
+         amount_usd, amount_sol, timestamp, signature)
+    )
+    conn.commit()
+    conn.close()
+
+
+def get_recent_buys_for_token(token_address: str, hours: int) -> List[Dict]:
+    """كل عمليات شراء الحيتان على عملة معينة في آخر X ساعة"""
+    cutoff = int(time.time()) - (hours * 3600)
+    conn = sqlite3.connect(DB_PATH)
+    rows = conn.execute(
+        """SELECT whale_address, whale_name, token_symbol, amount_usd,
+                  amount_sol, timestamp, signature
+           FROM whale_buys
+           WHERE token_address = ? AND timestamp >= ?
+           ORDER BY timestamp ASC""",
+        (token_address, cutoff)
+    ).fetchall()
+    conn.close()
+    return [{"whale_address": r[0], "whale_name": r[1], "token_symbol": r[2],
+             "amount_usd": r[3], "amount_sol": r[4], "timestamp": r[5],
+             "signature": r[6]} for r in rows]
+
+
+def get_unique_whales_count_for_token(token_address: str, hours: int) -> int:
+    """عدد الحيتان الفريدين اللي اشتروا العملة في آخر X ساعة"""
+    cutoff = int(time.time()) - (hours * 3600)
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute(
+        """SELECT COUNT(DISTINCT whale_address) as cnt
+           FROM whale_buys
+           WHERE token_address = ? AND timestamp >= ?""",
+        (token_address, cutoff)
+    ).fetchone()
+    conn.close()
+    return row[0] if row else 0
+
+
+def can_send_accumulation_alert(token_address: str) -> bool:
+    """هل ممكن نبعت إشعار تجميع؟ (مش ضمن cooldown)"""
+    cutoff = int(time.time()) - (ACCUMULATION_COOLDOWN_HOURS * 3600)
+    conn = sqlite3.connect(DB_PATH)
+    row = conn.execute(
+        "SELECT last_alert_at FROM accumulation_alerts WHERE token_address = ?",
+        (token_address,)
+    ).fetchone()
+    conn.close()
+    if not row:
+        return True
+    return row[0] < cutoff
+
+
+def mark_accumulation_alert_sent(token_address: str):
+    """تعليم إن إشعار التجميع اتبعت"""
+    conn = sqlite3.connect(DB_PATH)
+    conn.execute(
+        """INSERT OR REPLACE INTO accumulation_alerts
+           (token_address, last_alert_at) VALUES (?, ?)""",
+        (token_address, int(time.time()))
+    )
+    conn.commit()
+    conn.close()
 
 # ==================== قائمة المحافظ ====================
 def get_all_whales() -> List[Dict]:
@@ -385,13 +491,133 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
 
                 # فلتر حسب الحد الأدنى
                 if value_usd >= MIN_BUY_USD:
+                    # نرسل إشعار الشراء العادي
                     await notify_buy(whale, buy, session, sol_price)
+
+                    # نسجل العملية في قاعدة البيانات (علشان التجميع)
+                    # نجيب الـ symbol من DexScreener بسرعة
+                    info = await get_token_info(session, buy["token_mint"])
+                    symbol = info.get("symbol", "???") if info else "???"
+                    log_whale_buy(
+                        whale_address=address,
+                        whale_name=name,
+                        token_address=buy["token_mint"],
+                        token_symbol=symbol,
+                        amount_usd=value_usd,
+                        amount_sol=buy["sol_amount"],
+                        signature=sig,
+                        timestamp=buy.get("timestamp", int(time.time()))
+                    )
+
+                    # نفحص التجميع
+                    await check_and_notify_accumulation(buy["token_mint"], symbol, info, session)
 
             # نعلمها كـ seen (سواء شراء أو لأ، علشان ما نفحصهاش تاني)
             mark_seen(sig)
 
     except Exception as e:
         log.error(f"Error polling {name}: {e}")
+
+
+async def check_and_notify_accumulation(token_address: str, token_symbol: str,
+                                         token_info: Optional[Dict],
+                                         session: aiohttp.ClientSession):
+    """
+    فحص لو فيه تجميع على العملة دي.
+    لو 3+ حيتان اشتروا نفس العملة في آخر 6 ساعات = إشعار تجميع.
+    """
+    unique_whales = get_unique_whales_count_for_token(
+        token_address, ACCUMULATION_WINDOW_HOURS
+    )
+
+    if unique_whales < ACCUMULATION_THRESHOLD:
+        return  # لسه مفيش تجميع
+
+    # لو ضمن cooldown، ما نبعتش
+    if not can_send_accumulation_alert(token_address):
+        return
+
+    # نجيب كل عمليات الشراء في الفترة
+    buys = get_recent_buys_for_token(token_address, ACCUMULATION_WINDOW_HOURS)
+    if not buys:
+        return
+
+    # نحسب الإجماليات
+    total_usd = sum(b["amount_usd"] for b in buys if b["amount_usd"])
+    total_sol = sum(b["amount_sol"] for b in buys if b["amount_sol"])
+
+    # نجهز قائمة الحيتان
+    whales_list = ""
+    seen_whales = set()
+    for b in buys:
+        if b["whale_address"] not in seen_whales:
+            seen_whales.add(b["whale_address"])
+            whales_list += f"  • {b['whale_name']} (${b['amount_usd']:,.0f})\n"
+
+    # نحسب الوقت
+    first_buy_ts = buys[0]["timestamp"]
+    last_buy_ts = buys[-1]["timestamp"]
+    duration_min = (last_buy_ts - first_buy_ts) / 60
+
+    from datetime import datetime, timezone, timedelta
+    cairo_tz = timezone(timedelta(hours=3))
+
+    # نجهز معلومات العملة
+    if token_info:
+        price = token_info.get("price_usd", 0)
+        liquidity = token_info.get("liquidity_usd", 0)
+        mcap = token_info.get("market_cap", 0)
+        volume = token_info.get("volume_24h", 0)
+        url = token_info.get("url", "")
+        dex = token_info.get("dex_id", "?")
+        created = token_info.get("pair_created_at")
+        age_str = ""
+        if created:
+            age_h = (int(time.time() * 1000) - created) / 3600000
+            if age_h < 1: age_str = f" 🆕 ({int(age_h * 60)} دقيقة)"
+            elif age_h < 24: age_str = f" 🆕 ({age_h:.1f} ساعة)"
+            else: age_str = f" ({age_h / 24:.1f} يوم)"
+    else:
+        price = 0
+        liquidity = 0
+        mcap = 0
+        volume = 0
+        url = f"https://solscan.io/token/{token_address}"
+        dex = "?"
+        age_str = ""
+
+    def format_usd(val):
+        if val >= 1e9: return f"${val/1e9:.2f}B"
+        elif val >= 1e6: return f"${val/1e6:.2f}M"
+        elif val >= 1e3: return f"${val/1e3:.1f}K"
+        elif val > 0: return f"${val:.4f}"
+        return "؟"
+
+    price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+
+    text = f"""
+🔥 <b>تجميع حيتان!</b> ⚡
+
+⏰ <b>الوقت:</b> {datetime.now(cairo_tz).strftime('%H:%M:%S')} ({datetime.now(cairo_tz).strftime('%d/%m/%Y')})
+
+🪙 <b>العملة:</b> {token_symbol}{age_str}
+🐋 <b>عدد الحيتان:</b> {unique_whales} حيتان في {duration_min:.0f} دقيقة
+💰 <b>إجمالي الشراء:</b> {format_usd(total_usd)} ({total_sol:.2f} SOL)
+
+<b>الحيتان اللي اشتروا:</b>
+{whales_list}
+📊 <b>السعر الحالي:</b> {price_str}
+💧 <b>السيولة:</b> {format_usd(liquidity)}
+📈 <b>الحجم 24h:</b> {format_usd(volume)}
+🏷️ <b>Market Cap:</b> {format_usd(mcap)}
+🔗 <b>DEX:</b> {dex}
+
+🔗 <a href="{url}">DexScreener</a>
+⚠️ <b>تنبيه:</b> ده إشارة قوية إن العملة دي بتجذب حيتان كتير - تابعها بجدية!
+"""
+    log.info(f"🔥 Accumulation alert: {token_symbol} - {unique_whales} whales in {duration_min:.0f}min")
+    await send_telegram(text, session)
+    mark_accumulation_alert_sent(token_address)
 
 async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol_price: float):
     """إرسال إشعار شراء على Telegram - real-time مع الوقت + Market Cap"""
