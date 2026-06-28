@@ -16,7 +16,7 @@ COPY requirements.txt .
 RUN pip install --no-cache-dir -r requirements.txt
 
 # نسخ باقي ملفات البوت
-COPY bot.py whales.py ./
+COPY bot.py bsc_monitor.py whales.py ./
 
 # إنشاء مجلد للبيانات
 RUN mkdir -p /app/data
