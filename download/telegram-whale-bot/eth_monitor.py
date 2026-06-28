@@ -284,6 +284,7 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
             text = f"""{header} {delay_str}
 
 🪙 <b>{symbol}</b> - {token_name}
+📋 <code>{buy.get('token_address', '?')}</code>
 
 💰 شراء: {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
 🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
