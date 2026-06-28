@@ -708,22 +708,21 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     # إشعار خاص للمطورين المعروفين
     is_famous = whale.get("is_famous", False)
     if is_famous:
-        header = "🚨🏆 مطور معروف اشترى!"
+        header = f"🚨🏆 <b>{name}</b> اشترى!"
         footer = "\n⚠️ مطور مشهور - ممكن تطير 5x-100x!"
     else:
-        header = "🐋 حوت اشترى!"
+        header = f"🐋 <b>{name}</b> اشترى!"
         footer = ""
 
     text = f"""{header} {delay_str}
-
-👤 {name}
 
 🪙 <b>{symbol}</b> - {token_name}{age_str}
 
 💰 شراء: {usd_str} ({sol_str})
 🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
 📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
-⏰ {tx_time_str} ({tx_date_str})
+
+⏰ <b>{tx_time_str}</b> ({tx_date_str})
 
 🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">TX</a> | <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>{footer}
 """

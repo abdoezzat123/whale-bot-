@@ -275,28 +275,23 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
             # إشعار خاص للمطورين المعروفين
             is_famous = whale.get("is_famous", False)
             if is_famous:
-                alert_emoji = "🚨🏆🚨"
-                alert_title = f"<b>مطور معروف اشترى على ETH!</b> {delay_str}"
-                warning = "⚠️ <b>تنبيه:</b> ده مطور مشهور! أي عملة بيشتروها بتطير 5x-100x. اشتري بسرعة!"
+                header = f"🚨🏆 <b>{name}</b> اشترى على ETH!"
+                footer = "\n⚠️ مطور مشهور - ممكن تطير 5x-100x!"
             else:
-                alert_emoji = "🚨"
-                alert_title = f"<b>حوت ETH اشترى!</b> {delay_str}"
-                warning = ""
+                header = f"🐋 <b>{name}</b> اشترى على ETH!"
+                footer = ""
 
-            text = f"""
-{alert_emoji} {alert_title}
-
-👤 {name}
+            text = f"""{header} {delay_str}
 
 🪙 <b>{symbol}</b> - {token_name}
 
 💰 شراء: {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
 🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
 📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
-⏰ {tx_time_str} ({tx_date_str})
 
-🔗 <a href="{url}">DexScreener</a> | <a href="https://etherscan.io/tx/{buy['tx_hash']}">TX</a> | <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>
-{warning}
+⏰ <b>{tx_time_str}</b> ({tx_date_str})
+
+🔗 <a href="{url}">DexScreener</a> | <a href="https://etherscan.io/tx/{buy['tx_hash']}">TX</a> | <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>{footer}
 """
             log.info(f"📤 ETH buy alert: {name} bought {symbol} ({format_usd(value_usd)})")
             await send_telegram(text, session)
