@@ -692,28 +692,30 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
             return f"${val:.2f}"
         return "؟"
 
-    # صياغة الرسالة - مع الوقت + Market Cap واضح
+    # صياغة الرسالة - أبسط وأوضح
     usd_str = f"${buy['value_usd']:,.0f}" if buy.get("value_usd") else "؟"
     sol_str = f"{buy['sol_amount']:.2f} SOL"
     price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
 
-    text = f"""
-🚨 <b>حوت اشترى!</b> {delay_str}
+    # إشعار خاص للمطورين المعروفين
+    is_famous = whale.get("is_famous", False)
+    if is_famous:
+        header = "🚨🏆 مطور معروف اشترى!"
+        footer = "\n⚠️ مطور مشهور - العملة دي ممكن تطير 5x-100x!"
+    else:
+        header = "🐋 حوت اشترى!"
+        footer = ""
 
-⏰ <b>الوقت:</b> {tx_time_str} ({tx_date_str}) - توقيت القاهرة
-👤 <b>الحوت:</b> {name}
-{f"📝 {note}" if note else ""}
+    text = f"""{header} {delay_str}
 
-🪙 <b>العملة:</b> {symbol} - {token_name}{age_str}
-💰 <b>قيمة الشراء:</b> {usd_str} ({sol_str})
-📊 <b>السعر:</b> {price_str}
-💧 <b>السيولة:</b> {format_usd(liquidity)}
-📈 <b>الحجم 24h:</b> {format_usd(volume)}
-🏷️ <b>Market Cap:</b> {format_usd(mcap)}
-🔗 <b>DEX:</b> {dex}
+👤 {name}
+🪙 {symbol} - {token_name}{age_str}
+💰 شراء: {usd_str} ({sol_str})
+🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
+📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
+⏰ {tx_time_str} ({tx_date_str})
 
-🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">Solscan TX</a>
-🏦 <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>
+🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">TX</a> | <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>{footer}
 """
     log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
     await send_telegram(text, session)
