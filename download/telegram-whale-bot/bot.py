@@ -31,7 +31,7 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
-POLL_SECONDS = int(os.getenv("POLL_SECONDS", "30"))
+POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))  # 5 ثواني = شبه real-time
 
 # ==================== Multi-RPC Endpoints مجانية 100% ====================
 # لو عندك Helius API key، حطها في .env وهيُستخدم تلقائياً (أقوى وأسرع)
@@ -394,10 +394,30 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
         log.error(f"Error polling {name}: {e}")
 
 async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol_price: float):
-    """إرسال إشعار شراء على Telegram"""
+    """إرسال إشعار شراء على Telegram - real-time مع الوقت + Market Cap"""
     name = whale.get("name", "Unknown Whale")
     note = whale.get("note", "")
     token_mint = buy["token_mint"]
+
+    # الوقت الحالي بدقة الثانية
+    now = time.time()
+    tx_time = buy.get("timestamp", now)
+    delay_seconds = int(now - tx_time)
+
+    # صياغة الوقت
+    from datetime import datetime, timezone, timedelta
+    cairo_tz = timezone(timedelta(hours=3))  # توقيت القاهرة
+    tx_dt = datetime.fromtimestamp(tx_time, tz=cairo_tz)
+    tx_time_str = tx_dt.strftime("%H:%M:%S")
+    tx_date_str = tx_dt.strftime("%d/%m/%Y")
+
+    # delay string
+    if delay_seconds < 5:
+        delay_str = "⚡ لحظي!"
+    elif delay_seconds < 60:
+        delay_str = f"⚡ {delay_seconds} ثانية"
+    else:
+        delay_str = f"{delay_seconds // 60} دقيقة"
 
     # نحاول نجيب معلومات العملة من DexScreener
     info = await get_token_info(session, token_mint)
@@ -434,32 +454,42 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
         url = f"https://solscan.io/token/{token_mint}"
         age_str = ""
 
-    # صياغة الرسالة
+    # صياغة Market Cap بشكل مختصر
+    def format_usd(val):
+        if val >= 1_000_000_000:
+            return f"${val/1e9:.2f}B"
+        elif val >= 1_000_000:
+            return f"${val/1e6:.2f}M"
+        elif val >= 1_000:
+            return f"${val/1e3:.1f}K"
+        elif val > 0:
+            return f"${val:.2f}"
+        return "؟"
+
+    # صياغة الرسالة - مع الوقت + Market Cap واضح
     usd_str = f"${buy['value_usd']:,.0f}" if buy.get("value_usd") else "؟"
     sol_str = f"{buy['sol_amount']:.2f} SOL"
     price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
-    liq_str = f"${liquidity:,.0f}" if liquidity else "؟"
-    vol_str = f"${volume:,.0f}" if volume else "؟"
-    mcap_str = f"${mcap:,.0f}" if mcap else "؟"
 
     text = f"""
-🐋 <b>حوت اشترى!</b>
+🚨 <b>حوت اشترى!</b> {delay_str}
 
+⏰ <b>الوقت:</b> {tx_time_str} ({tx_date_str}) - توقيت القاهرة
 👤 <b>الحوت:</b> {name}
 {f"📝 {note}" if note else ""}
 
 🪙 <b>العملة:</b> {symbol} - {token_name}{age_str}
 💰 <b>قيمة الشراء:</b> {usd_str} ({sol_str})
 📊 <b>السعر:</b> {price_str}
-💧 <b>السيولة:</b> {liq_str}
-📈 <b>الحجم 24h:</b> {vol_str}
-🏷️ <b>Market Cap:</b> {mcap_str}
+💧 <b>السيولة:</b> {format_usd(liquidity)}
+📈 <b>الحجم 24h:</b> {format_usd(volume)}
+🏷️ <b>Market Cap:</b> {format_usd(mcap)}
 🔗 <b>DEX:</b> {dex}
 
 🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">Solscan TX</a>
 🏦 <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>
 """
-    log.info(f"📤 Buy alert: {name} bought {symbol} ({usd_str})")
+    log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
     await send_telegram(text, session)
 
 async def get_sol_price(session: aiohttp.ClientSession) -> float:
