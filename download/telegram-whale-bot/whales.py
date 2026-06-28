@@ -643,11 +643,71 @@ ETH_WHALES = [
         "source": "FAMOUS_DEV",
         "is_famous": True,
     },
+
+    # =========================================================
+    # 🐋 Top Holders PEPE + SHIB
+    # =========================================================
+    {
+        "name": "🐋 PEPE Top Holder (3.6%)",
+        "address": "0x3f9a8345729ea842708e080e238c92731e5699b8",
+        "note": "PEPE top holder - 3.6%",
+    },
+    {
+        "name": "🐋 PEPE Top Holder (2.2%)",
+        "address": "0xc671b05671a7cd3080c6ceae79d284bdde0ef271",
+        "note": "PEPE top holder - 2.2%",
+    },
+    {
+        "name": "🐋 PEPE Top Holder (2.2%)",
+        "address": "0x15da7556d5ed888306839bed06f868aeaedcb0d7",
+        "note": "PEPE top holder - نشط يومي",
+    },
+    {
+        "name": "🐋 PEPE Top Holder (2%)",
+        "address": "0x76ec5a0d3632b2133d9f1980903305b62678fbd3",
+        "note": "PEPE top holder - نشط يومي",
+    },
+    {
+        "name": "🐋 PEPE+SHIB Whale",
+        "address": "0x5a52e96bacdabb82fd05763e25335261b270efcb",
+        "note": "PEPE 7.9% + SHIB 3.6%",
+    },
+    {
+        "name": "🐋 PEPE+SHIB Whale",
+        "address": "0x1d48963dd8fada6ab5c2c7b92eba81ecc5030270",
+        "note": "PEPE 6.9% + SHIB 1.6%",
+    },
+    {
+        "name": "🐋 PEPE+SHIB Whale",
+        "address": "0x611f7bf868a6212f871e89f7e44684045ddfb09d",
+        "note": "PEPE 3.2% + SHIB 0.7% - نشط يومي",
+    },
+    {
+        "name": "🐋 PEPE+SHIB Whale",
+        "address": "0xa023f08c70a23abc7edfc5b6b5e171d78dfc947e",
+        "note": "PEPE 1.5% + SHIB 2.8% - نشط يومي",
+    },
+    {
+        "name": "🐋 SHIB Top Holder (6.1%)",
+        "address": "0x02e2201576fbbefb52812f2ee7f08eb4774b481e",
+        "note": "SHIB top holder - 6.1%",
+    },
+    {
+        "name": "🐋 SHIB Top Holder (3.9%)",
+        "address": "0x40b38765696e3d5d8d9d834d8aad4bb6e418e489",
+        "note": "SHIB top holder - 3.9%",
+    },
+    {
+        "name": "🐋 SHIB Top Holder (1.5%)",
+        "address": "0xa7060aece919e4b7d9928b8418a9d30731471fa9",
+        "note": "SHIB top holder - 1.5%",
+    },
+    {
+        "name": "🐋 SHIB Top Holder (0.9%)",
+        "address": "0x47ac0fb4f2d84898e4d9e7b4dab3c24507a6d503",
+        "note": "SHIB top holder - 0.9%",
+    },
 ]
-
-
-# =========================================================
-# محافظ BSC (FLOKI + CZ)
 # =========================================================
 BSC_WHALES = [
     {
