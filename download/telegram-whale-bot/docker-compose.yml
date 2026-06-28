@@ -9,7 +9,6 @@ services:
     env_file:
       - .env
     volumes:
-      # حفظ الـ database خارج الـ container
       - ./data/solana:/app/data
     logging:
       driver: "json-file"
@@ -29,6 +28,24 @@ services:
     command: python -u bsc_monitor.py
     volumes:
       - ./data/bsc:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
+    networks:
+      - whale-net
+
+  # مراقب Ethereum (Murad + ETHTRENDING + NeoCallss)
+  whale-bot-eth:
+    build: .
+    container_name: whale-bot-eth
+    restart: always
+    env_file:
+      - .env
+    command: python -u eth_monitor.py
+    volumes:
+      - ./data/eth:/app/data
     logging:
       driver: "json-file"
       options:
