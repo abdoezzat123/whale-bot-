@@ -1,0 +1,974 @@
+     1→"""
+     2→بوت تتبع حيتان Meme Coins على Solana
+     3→====================================
+     4→- بيراقب محافظ الحيتان على شبكة Solana
+     5→- بيبعت إشعار فوري على Telegram لما أي حوت يشتري meme coin
+     6→- بيجيب بيانات العملة من DexScreener (مجاني)
+     7→- يستخدم Multi-RPC مجاني بدون أي API key
+     8→
+     9→التشغيل:
+    10→  1. python3 -m venv venv && source venv/bin/activate
+    11→  2. pip install -r requirements.txt
+    12→  3. املأ .env بالقيم (TELEGRAM_BOT_TOKEN و TELEGRAM_CHAT_ID)
+    13→  4. python bot.py
+    14→"""
+    15→import os
+    16→import asyncio
+    17→import logging
+    18→import sqlite3
+    19→import time
+    20→import json
+    21→import random
+    22→from typing import Dict, List, Optional, Set
+    23→from pathlib import Path
+    24→
+    25→import aiohttp
+    26→from dotenv import load_dotenv
+    27→
+    28→load_dotenv()
+    29→
+    30→# ==================== الإعدادات ====================
+    31→TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
+    32→TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
+    33→MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
+    34→POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))  # 5 ثواني = شبه real-time
+    35→
+    36→# ==================== Multi-RPC Endpoints مجانية 100% ====================
+    37→# لو عندك Helius API key، حطها في .env وهيُستخدم تلقائياً (أقوى وأسرع)
+    38→HELIUS_API_KEY = os.getenv("HELIUS_API_KEY", "").strip()
+    39→
+    40→# قائمة RPC endpoints مجانية بترتيب الأولوية
+    41→# Helius لو موجود، بعدها باقي الـ public RPCs
+    42→PUBLIC_RPCS = [
+    43→    "https://api.mainnet-beta.solana.com",                # Solana official (40 req/sec)
+    44→    "https://solana-mainnet.rpc.extrnode.com",            # Triton public
+    45→    "https://rpc.ankr.com/solana",                        # Ankr public
+    46→    "https://solana-mainnet.g.alchemy.com/v2/demo",       # Alchemy demo
+    47→    "https://mainnet.solana-rpc.com",                     # Public
+    48→]
+    49→
+    50→# لو عندك Helius، نحطه الأول
+    51→ALL_RPCS = []
+    52→if HELIUS_API_KEY:
+    53→    ALL_RPCS.append(f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}")
+    54→ALL_RPCS.extend(PUBLIC_RPCS)
+    55→
+    56→# إحصائيات الـ RPCs (للتتبع أي endpoint أفضل)
+    57→rpc_stats: Dict[str, Dict] = {rpc: {"success": 0, "fail": 0} for rpc in ALL_RPCS}
+    58→
+    59→# قاعدة بيانات SQLite بسيطة (file واحد)
+    60→DB_PATH = Path(__file__).parent / "seen.db"
+    61→
+    62→# إعداد الـ logging
+    63→logging.basicConfig(
+    64→    level=logging.INFO,
+    65→    format="%(asctime)s [%(levelname)s] %(message)s",
+    66→    datefmt="%H:%M:%S",
+    67→)
+    68→log = logging.getLogger("whale-bot")
+    69→
+    70→# ==================== إعدادات التجميع ====================
+    71→# 3 حيتان يشتروا نفس العملة في 6 ساعات = إشعار "🔥 تجميع"
+    72→ACCUMULATION_THRESHOLD = int(os.getenv("ACCUMULATION_THRESHOLD", "3"))
+    73→ACCUMULATION_WINDOW_HOURS = int(os.getenv("ACCUMULATION_WINDOW_HOURS", "6"))
+    74→# منع تكرار إشعارات التجميع لنفس العملة (ساعة بين كل إشعار)
+    75→ACCUMULATION_COOLDOWN_HOURS = int(os.getenv("ACCUMULATION_COOLDOWN_HOURS", "3"))
+    76→
+    77→# ==================== قاعدة البيانات ====================
+    78→def init_db():
+    79→    conn = sqlite3.connect(DB_PATH)
+    80→    conn.execute("""
+    81→        CREATE TABLE IF NOT EXISTS seen_txs (
+    82→            signature TEXT PRIMARY KEY,
+    83→            seen_at INTEGER
+    84→        )
+    85→    """)
+    86→    conn.execute("""
+    87→        CREATE TABLE IF NOT EXISTS user_whales (
+    88→            address TEXT PRIMARY KEY,
+    89→            name TEXT,
+    90→            added_at INTEGER
+    91→        )
+    92→    """)
+    93→    conn.execute("""
+    94→        CREATE TABLE IF NOT EXISTS whale_buys (
+    95→            id INTEGER PRIMARY KEY AUTOINCREMENT,
+    96→            whale_address TEXT NOT NULL,
+    97→            whale_name TEXT,
+    98→            token_address TEXT NOT NULL,
+    99→            token_symbol TEXT,
+   100→            amount_usd REAL,
+   101→            amount_sol REAL,
+   102→            timestamp INTEGER NOT NULL,
+   103→            signature TEXT
+   104→        )
+   105→    """)
+   106→    conn.execute("""
+   107→        CREATE INDEX IF NOT EXISTS idx_buys_token
+   108→            ON whale_buys(token_address, timestamp)
+   109→    """)
+   110→    conn.execute("""
+   111→        CREATE TABLE IF NOT EXISTS accumulation_alerts (
+   112→            token_address TEXT PRIMARY KEY,
+   113→            last_alert_at INTEGER
+   114→        )
+   115→    """)
+   116→    conn.commit()
+   117→    conn.close()
+   118→
+   119→def is_seen(signature: str) -> bool:
+   120→    conn = sqlite3.connect(DB_PATH)
+   121→    row = conn.execute("SELECT 1 FROM seen_txs WHERE signature = ?", (signature,)).fetchone()
+   122→    conn.close()
+   123→    return row is not None
+   124→
+   125→def mark_seen(signature: str):
+   126→    conn = sqlite3.connect(DB_PATH)
+   127→    conn.execute("INSERT OR IGNORE INTO seen_txs (signature, seen_at) VALUES (?, ?)",
+   128→                 (signature, int(time.time())))
+   129→    conn.commit()
+   130→    conn.close()
+   131→
+   132→def add_user_whale(address: str, name: str):
+   133→    conn = sqlite3.connect(DB_PATH)
+   134→    conn.execute("INSERT OR REPLACE INTO user_whales (address, name, added_at) VALUES (?, ?, ?)",
+   135→                 (address, name, int(time.time())))
+   136→    conn.commit()
+   137→    conn.close()
+   138→
+   139→def remove_user_whale(address: str) -> bool:
+   140→    conn = sqlite3.connect(DB_PATH)
+   141→    cur = conn.execute("DELETE FROM user_whales WHERE address = ?", (address,))
+   142→    conn.commit()
+   143→    ok = cur.rowcount > 0
+   144→    conn.close()
+   145→    return ok
+   146→
+   147→def list_user_whales() -> List[Dict]:
+   148→    conn = sqlite3.connect(DB_PATH)
+   149→    rows = conn.execute("SELECT address, name FROM user_whales").fetchall()
+   150→    conn.close()
+   151→    return [{"address": r[0], "name": r[1]} for r in rows]
+   152→
+   153→
+   154→# ==================== دوال التجميع ====================
+   155→def log_whale_buy(whale_address: str, whale_name: str, token_address: str,
+   156→                  token_symbol: str, amount_usd: float, amount_sol: float,
+   157→                  signature: str, timestamp: int):
+   158→    """تسجيل عملية شراء حوت في قاعدة البيانات"""
+   159→    conn = sqlite3.connect(DB_PATH)
+   160→    conn.execute(
+   161→        """INSERT INTO whale_buys
+   162→           (whale_address, whale_name, token_address, token_symbol,
+   163→            amount_usd, amount_sol, timestamp, signature)
+   164→           VALUES (?, ?, ?, ?, ?, ?, ?, ?)""",
+   165→        (whale_address, whale_name, token_address, token_symbol,
+   166→         amount_usd, amount_sol, timestamp, signature)
+   167→    )
+   168→    conn.commit()
+   169→    conn.close()
+   170→
+   171→
+   172→def get_recent_buys_for_token(token_address: str, hours: int) -> List[Dict]:
+   173→    """كل عمليات شراء الحيتان على عملة معينة في آخر X ساعة"""
+   174→    cutoff = int(time.time()) - (hours * 3600)
+   175→    conn = sqlite3.connect(DB_PATH)
+   176→    rows = conn.execute(
+   177→        """SELECT whale_address, whale_name, token_symbol, amount_usd,
+   178→                  amount_sol, timestamp, signature
+   179→           FROM whale_buys
+   180→           WHERE token_address = ? AND timestamp >= ?
+   181→           ORDER BY timestamp ASC""",
+   182→        (token_address, cutoff)
+   183→    ).fetchall()
+   184→    conn.close()
+   185→    return [{"whale_address": r[0], "whale_name": r[1], "token_symbol": r[2],
+   186→             "amount_usd": r[3], "amount_sol": r[4], "timestamp": r[5],
+   187→             "signature": r[6]} for r in rows]
+   188→
+   189→
+   190→def get_unique_whales_count_for_token(token_address: str, hours: int) -> int:
+   191→    """عدد الحيتان الفريدين اللي اشتروا العملة في آخر X ساعة"""
+   192→    cutoff = int(time.time()) - (hours * 3600)
+   193→    conn = sqlite3.connect(DB_PATH)
+   194→    row = conn.execute(
+   195→        """SELECT COUNT(DISTINCT whale_address) as cnt
+   196→           FROM whale_buys
+   197→           WHERE token_address = ? AND timestamp >= ?""",
+   198→        (token_address, cutoff)
+   199→    ).fetchone()
+   200→    conn.close()
+   201→    return row[0] if row else 0
+   202→
+   203→
+   204→def can_send_accumulation_alert(token_address: str) -> bool:
+   205→    """هل ممكن نبعت إشعار تجميع؟ (مش ضمن cooldown)"""
+   206→    cutoff = int(time.time()) - (ACCUMULATION_COOLDOWN_HOURS * 3600)
+   207→    conn = sqlite3.connect(DB_PATH)
+   208→    row = conn.execute(
+   209→        "SELECT last_alert_at FROM accumulation_alerts WHERE token_address = ?",
+   210→        (token_address,)
+   211→    ).fetchone()
+   212→    conn.close()
+   213→    if not row:
+   214→        return True
+   215→    return row[0] < cutoff
+   216→
+   217→
+   218→def mark_accumulation_alert_sent(token_address: str):
+   219→    """تعليم إن إشعار التجميع اتبعت"""
+   220→    conn = sqlite3.connect(DB_PATH)
+   221→    conn.execute(
+   222→        """INSERT OR REPLACE INTO accumulation_alerts
+   223→           (token_address, last_alert_at) VALUES (?, ?)""",
+   224→        (token_address, int(time.time()))
+   225→    )
+   226→    conn.commit()
+   227→    conn.close()
+   228→
+   229→# ==================== قائمة المحافظ ====================
+   230→def get_all_whales() -> List[Dict]:
+   231→    """دمج محافظ whales.py + المحافظ اللي ضافها المستخدم"""
+   232→    from whales import WHALES as DEFAULT_WHALES
+   233→    all_w = list(DEFAULT_WHALES)
+   234→    for uw in list_user_whales():
+   235→        all_w.append({"name": uw["name"], "address": uw["address"], "note": "مضافة من المستخدم"})
+   236→    # إزالة التكرار بناءً على الـ address
+   237→    seen_addr = set()
+   238→    unique = []
+   239→    for w in all_w:
+   240→        if w["address"] not in seen_addr:
+   241→            unique.append(w)
+   242→            seen_addr.add(w["address"])
+   243→    return unique
+   244→
+   245→# ==================== Telegram ====================
+   246→async def send_telegram(text: str, session: aiohttp.ClientSession):
+   247→    if not TELEGRAM_CHAT_ID:
+   248→        log.warning("TELEGRAM_CHAT_ID غير مضبوط في .env - الإشعار مش هيتبعت")
+   249→        return
+   250→    url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
+   251→    payload = {
+   252→        "chat_id": TELEGRAM_CHAT_ID,
+   253→        "text": text,
+   254→        "parse_mode": "HTML",
+   255→        "disable_web_page_preview": True,
+   256→    }
+   257→    try:
+   258→        async with session.post(url, json=payload, timeout=15) as resp:
+   259→            if resp.status != 200:
+   260→                log.error(f"Telegram error {resp.status}: {await resp.text()}")
+   261→    except Exception as e:
+   262→        log.error(f"Telegram exception: {e}")
+   263→
+   264→# ==================== Multi-RPC System ====================
+   265→def get_sorted_rpcs() -> List[str]:
+   266→    """ترتيب الـ RPCs حسب نسبة النجاح (الأفضل أولاً)"""
+   267→    def score(rpc):
+   268→        s = rpc_stats[rpc]["success"]
+   269→        f = rpc_stats[rpc]["fail"]
+   270→        return -(s / max(s + f, 1))  # أعلى نسبة نجاح الأول
+   271→    return sorted(ALL_RPCS, key=score)
+   272→
+   273→async def rpc_call(session: aiohttp.ClientSession, method: str, params: list) -> Optional[Dict]:
+   274→    """
+   275→    استدعاء RPC method على عدة endpoints بالتوازي.
+   276→    بترجع أول نتيجة ناجحة.
+   277→    """
+   278→    payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
+   279→    rpcs = get_sorted_rpcs()
+   280→
+   281→    # نجرّب أول 3 RPCs بالتوازي
+   282→    async def try_rpc(rpc_url: str) -> Optional[Dict]:
+   283→        try:
+   284→            async with session.post(rpc_url, json=payload, timeout=15) as resp:
+   285→                if resp.status != 200:
+   286→                    rpc_stats[rpc_url]["fail"] += 1
+   287→                    return None
+   288→                data = await resp.json()
+   289→                if "error" in data:
+   290→                    rpc_stats[rpc_url]["fail"] += 1
+   291→                    return None
+   292→                rpc_stats[rpc_url]["success"] += 1
+   293→                return data.get("result")
+   294→        except Exception:
+   295→            rpc_stats[rpc_url]["fail"] += 1
+   296→            return None
+   297→
+   298→    # نجرّب أول 3 بالتوازي
+   299→    tasks = [try_rpc(rpc) for rpc in rpcs[:3]]
+   300→    for result in await asyncio.gather(*tasks, return_exceptions=False):
+   301→        if result is not None:
+   302→            return result
+   303→
+   304→    # لو كلهم فشلوا، نجرّب الباقي بالتتابع
+   305→    for rpc in rpcs[3:]:
+   306→        result = await try_rpc(rpc)
+   307→        if result is not None:
+   308→            return result
+   309→    return None
+   310→
+   311→async def get_recent_signatures(session: aiohttp.ClientSession, address: str, limit: int = 8) -> List[Dict]:
+   312→    result = await rpc_call(session, "getSignaturesForAddress", [address, {"limit": limit}])
+   313→    return result if result else []
+   314→
+   315→async def get_parsed_tx(session: aiohttp.ClientSession, signature: str) -> Optional[Dict]:
+   316→    result = await rpc_call(session, "getTransaction",
+   317→                            [signature, {"maxSupportedTransactionVersion": 0, "encoding": "jsonParsed"}])
+   318→    return result
+   319→
+   320→# ==================== DexScreener ====================
+   321→async def get_token_info(session: aiohttp.ClientSession, token_address: str) -> Optional[Dict]:
+   322→    url = f"https://api.dexscreener.com/tokens/v1/solana/{token_address}"
+   323→    try:
+   324→        async with session.get(url, timeout=15) as resp:
+   325→            if resp.status != 200:
+   326→                return None
+   327→            pairs = await resp.json()
+   328→            if not pairs:
+   329→                return None
+   330→            # اختيار أعلى pair سيولة
+   331→            best = max(pairs, key=lambda p: float(p.get("liquidity", {}).get("usd", 0) or 0))
+   332→            return {
+   333→                "symbol": best.get("baseToken", {}).get("symbol", "???"),
+   334→                "name": best.get("baseToken", {}).get("name", "Unknown"),
+   335→                "price_usd": float(best.get("priceUsd", 0) or 0),
+   336→                "liquidity_usd": float(best.get("liquidity", {}).get("usd", 0) or 0),
+   337→                "volume_24h": float(best.get("volume", {}).get("h24", 0) or 0),
+   338→                "market_cap": float(best.get("fdv", 0) or 0),
+   339→                "dex_id": best.get("dexId", "?"),
+   340→                "pair_created_at": best.get("pairCreatedAt"),
+   341→                "url": best.get("url", f"https://dexscreener.com/solana/{token_address}"),
+   342→                "socials": best.get("links", {}),
+   343→            }
+   344→    except Exception as e:
+   345→        log.error(f"DexScreener exception: {e}")
+   346→        return None
+   347→
+   348→# ==================== كشف عمليات الشراء ====================
+   349→# DEX programs على Solana - اللي بنشوف منها عمليات الـ swap
+   350→DEX_PROGRAMS = {
+   351→    "675kPX9MHTjS2zt1qfr1NYHuzeLXfQM9H24wFSUt1Mp8",  # Raydium V4 AMM
+   352→    "JUP4Fb2cqiRUcaTHdrPC8h2gNsA2ETXiPDD33WcGuJB",   # Jupiter v4
+   353→    "JUP6LkbZbjS1jKKwapdHNy74zcZ3tLUZoi5QNyVTaV4",   # Jupiter v6
+   354→    "9W959DqEETiGZocYWCQPaJ6sBmUzgfxXfqGeTEdp3aQP",  # Orca Whirlpools
+   355→    "M2mx93tUckJzCz7VgUi8VRd5wQzk5RxUWmRdD1VwTu6",  # Metaplex Token
+   356→    "pAMMBay6oceH9fJKBRHGP5D4bD4sWpmSwMn52FMfXEA",  # Pump.fun AMM
+   357→    "Eo7WjKq67rjJQSZxS6z3YkapzY3eMj6Xy8X5EQVn5UaB",  # Pump.fun
+   358→    "6EF8rrecthR5Dkzon8Nwu78hRvfCKubJ14M5uBEwF6P",  # Pump.fun program
+   359→}
+   360→
+   361→# SPL Token program - لتحويلات الـ tokens
+   362→TOKEN_PROGRAM = "TokenkegQfeZyiNwAJbNbGKPFXCWuBvf9Ss623VQ5DA"
+   363→
+   364→# Wrapped SOL mint
+   365→WSOL_MINT = "So11111111111111111111111111111111111111112"
+   366→
+   367→def analyze_buy_tx(tx_data: Dict, whale_address: str) -> Optional[Dict]:
+   368→    """
+   369→    تحليل معاملة وتحديد لو فيها عملية شراء meme coin.
+   370→
+   371→    منطق بسيط:
+   372→    - لو فيه transfer لـ WSOL خارج من المحفظة (الحوت دفع SOL)
+   373→    - وفي نفس الوقت transfer لـ token جاي للمحفظة (الحوت استلم عملة)
+   374→    - يبقى ده "شراء"
+   375→
+   376→    بيرجع:
+   377→    {
+   378→        "token_mint": str,
+   379→        "token_amount": float,
+   380→        "sol_amount": float,
+   381→        "value_usd": float,  # بنحسبه من سعر SOL
+   382→        "signature": str,
+   383→        "timestamp": int,
+   384→    }
+   385→    أو None لو مش عملية شراء
+   386→    """
+   387→    if not tx_data:
+   388→        return None
+   389→
+   390→    try:
+   391→        msg = tx_data.get("meta")
+   392→        if not msg or msg.get("err"):
+   393→            return None
+   394→
+   395→        inner_instructions = msg.get("innerInstructions", []) or []
+   396→        # نطبق كل الـ token transfers من الـ inner instructions + outer
+   397→        pre_token_balances = msg.get("preTokenBalances", []) or []
+   398→        post_token_balances = msg.get("postTokenBalances", []) or []
+   399→
+   400→        # نحسب التغير في رصيد المحفظة لكل token
+   401→        balance_changes = {}  # mint -> {before, after}
+   402→        for pb in pre_token_balances:
+   403→            if pb.get("owner") == whale_address:
+   404→                mint = pb.get("mint")
+   405→                balance_changes.setdefault(mint, {"before": 0, "after": 0})
+   406→                balance_changes[mint]["before"] = pb.get("uiTokenAmount", {}).get("uiAmount", 0) or 0
+   407→
+   408→        for pb in post_token_balances:
+   409→            if pb.get("owner") == whale_address:
+   410→                mint = pb.get("mint")
+   411→                balance_changes.setdefault(mint, {"before": 0, "after": 0})
+   412→                balance_changes[mint]["after"] = pb.get("uiTokenAmount", {}).get("uiAmount", 0) or 0
+   413→
+   414→        # لو فيه SOL خرج + token دخل = شراء
+   415→        sol_change = balance_changes.get(WSOL_MINT, {"before": 0, "after": 0})
+   416→        sol_diff = (sol_change["after"] or 0) - (sol_change["before"] or 0)
+   417→
+   418→        bought_tokens = []
+   419→        for mint, change in balance_changes.items():
+   420→            if mint == WSOL_MINT:
+   421→                continue
+   422→            diff = (change["after"] or 0) - (change["before"] or 0)
+   423→            if diff > 0:  # زاد الرصيد = استلم tokens
+   424→                bought_tokens.append({
+   425→                    "mint": mint,
+   426→                    "amount": diff,
+   427→                })
+   428→
+   429→        # كمان نشوف native SOL لو الحوت دفع
+   430→        fee_payer_balance_change = 0
+   431→        try:
+   432→            pre_balances = msg.get("preBalances", []) or []
+   433→            post_balances = msg.get("postBalances", []) or []
+   434→            account_keys = tx_data.get("transaction", {}).get("message", {}).get("accountKeys", []) or []
+   435→            for i, key in enumerate(account_keys):
+   436→                key_str = key.get("pubkey") if isinstance(key, dict) else key
+   437→                if key_str == whale_address and i < len(pre_balances) and i < len(post_balances):
+   438→                    fee_payer_balance_change = (post_balances[i] - pre_balances[i]) / 1e9
+   439→                    break
+   440→        except Exception:
+   441→            pass
+   442→
+   443→        total_sol_out = -sol_diff + max(0, -fee_payer_balance_change)
+   444→        if not bought_tokens or total_sol_out <= 0:
+   445→            return None
+   446→
+   447→        # نختار أكبر token تم شراؤه
+   448→        biggest = max(bought_tokens, key=lambda t: t["amount"])
+   449→        # تحويل lamports to SOL (token amount بـ uiAmount بالفعل، بس SOL الخام بالـ lamports)
+   450→        # sol_diff هنا بالفعل uiAmount (wrapped SOL) - يعني بالـ SOL الحقيقي
+   451→        sol_paid = total_sol_out
+   452→
+   453→        return {
+   454→            "token_mint": biggest["mint"],
+   455→            "token_amount": biggest["amount"],
+   456→            "sol_amount": sol_paid,
+   457→            "signature": tx_data.get("transaction", {}).get("signatures", [""])[0],
+   458→            "timestamp": tx_data.get("blockTime") or int(time.time()),
+   459→            "slot": tx_data.get("slot"),
+   460→        }
+   461→    except Exception as e:
+   462→        log.error(f"Error analyzing tx: {e}")
+   463→        return None
+   464→
+   465→# ==================== الحلقة الرئيسية ====================
+   466→async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: float):
+   467→    """فحص محفظة حوت واحدة"""
+   468→    address = whale["address"]
+   469→    name = whale.get("name", "Unknown Whale")
+   470→    try:
+   471→        sigs = await get_recent_signatures(session, address, limit=6)
+   472→        if not sigs:
+   473→            return
+   474→
+   475→        # نعكس الترتيب علشان نعالج الأقدم الأول (لو فيه أكثر من واحد جديد)
+   476→        for sig_info in reversed(sigs):
+   477→            sig = sig_info.get("signature", "")
+   478→            if not sig or sig_info.get("err"):
+   479→                continue
+   480→            if is_seen(sig):
+   481→                continue
+   482→
+   483→            # نجيب تفاصيل المعاملة
+   484→            tx = await get_parsed_tx(session, sig)
+   485→            buy = analyze_buy_tx(tx, address)
+   486→
+   487→            if buy:
+   488→                # نحسب القيمة بالدولار
+   489→                value_usd = buy["sol_amount"] * sol_price if sol_price else 0
+   490→                buy["value_usd"] = value_usd
+   491→
+   492→                # فلتر حسب الحد الأدنى
+   493→                if value_usd >= MIN_BUY_USD:
+   494→                    # نرسل إشعار الشراء العادي
+   495→                    await notify_buy(whale, buy, session, sol_price)
+   496→
+   497→                    # نسجل العملية في قاعدة البيانات (علشان التجميع)
+   498→                    # نجيب الـ symbol من DexScreener بسرعة
+   499→                    info = await get_token_info(session, buy["token_mint"])
+   500→                    symbol = info.get("symbol", "???") if info else "???"
+   501→                    log_whale_buy(
+   502→                        whale_address=address,
+   503→                        whale_name=name,
+   504→                        token_address=buy["token_mint"],
+   505→                        token_symbol=symbol,
+   506→                        amount_usd=value_usd,
+   507→                        amount_sol=buy["sol_amount"],
+   508→                        signature=sig,
+   509→                        timestamp=buy.get("timestamp", int(time.time()))
+   510→                    )
+   511→
+   512→                    # نفحص التجميع
+   513→                    await check_and_notify_accumulation(buy["token_mint"], symbol, info, session)
+   514→
+   515→            # نعلمها كـ seen (سواء شراء أو لأ، علشان ما نفحصهاش تاني)
+   516→            mark_seen(sig)
+   517→
+   518→    except Exception as e:
+   519→        log.error(f"Error polling {name}: {e}")
+   520→
+   521→
+   522→async def check_and_notify_accumulation(token_address: str, token_symbol: str,
+   523→                                         token_info: Optional[Dict],
+   524→                                         session: aiohttp.ClientSession):
+   525→    """
+   526→    فحص لو فيه تجميع على العملة دي.
+   527→    لو 3+ حيتان اشتروا نفس العملة في آخر 6 ساعات = إشعار تجميع.
+   528→    """
+   529→    unique_whales = get_unique_whales_count_for_token(
+   530→        token_address, ACCUMULATION_WINDOW_HOURS
+   531→    )
+   532→
+   533→    if unique_whales < ACCUMULATION_THRESHOLD:
+   534→        return  # لسه مفيش تجميع
+   535→
+   536→    # لو ضمن cooldown، ما نبعتش
+   537→    if not can_send_accumulation_alert(token_address):
+   538→        return
+   539→
+   540→    # نجيب كل عمليات الشراء في الفترة
+   541→    buys = get_recent_buys_for_token(token_address, ACCUMULATION_WINDOW_HOURS)
+   542→    if not buys:
+   543→        return
+   544→
+   545→    # نحسب الإجماليات
+   546→    total_usd = sum(b["amount_usd"] for b in buys if b["amount_usd"])
+   547→    total_sol = sum(b["amount_sol"] for b in buys if b["amount_sol"])
+   548→
+   549→    # نجهز قائمة الحيتان
+   550→    whales_list = ""
+   551→    seen_whales = set()
+   552→    for b in buys:
+   553→        if b["whale_address"] not in seen_whales:
+   554→            seen_whales.add(b["whale_address"])
+   555→            whales_list += f"  • {b['whale_name']} (${b['amount_usd']:,.0f})\n"
+   556→
+   557→    # نحسب الوقت
+   558→    first_buy_ts = buys[0]["timestamp"]
+   559→    last_buy_ts = buys[-1]["timestamp"]
+   560→    duration_min = (last_buy_ts - first_buy_ts) / 60
+   561→
+   562→    from datetime import datetime, timezone, timedelta
+   563→    cairo_tz = timezone(timedelta(hours=3))
+   564→
+   565→    # نجهز معلومات العملة
+   566→    if token_info:
+   567→        price = token_info.get("price_usd", 0)
+   568→        liquidity = token_info.get("liquidity_usd", 0)
+   569→        mcap = token_info.get("market_cap", 0)
+   570→        volume = token_info.get("volume_24h", 0)
+   571→        url = token_info.get("url", "")
+   572→        dex = token_info.get("dex_id", "?")
+   573→        created = token_info.get("pair_created_at")
+   574→        age_str = ""
+   575→        if created:
+   576→            age_h = (int(time.time() * 1000) - created) / 3600000
+   577→            if age_h < 1: age_str = f" 🆕 ({int(age_h * 60)} دقيقة)"
+   578→            elif age_h < 24: age_str = f" 🆕 ({age_h:.1f} ساعة)"
+   579→            else: age_str = f" ({age_h / 24:.1f} يوم)"
+   580→    else:
+   581→        price = 0
+   582→        liquidity = 0
+   583→        mcap = 0
+   584→        volume = 0
+   585→        url = f"https://solscan.io/token/{token_address}"
+   586→        dex = "?"
+   587→        age_str = ""
+   588→
+   589→    def format_usd(val):
+   590→        if val >= 1e9: return f"${val/1e9:.2f}B"
+   591→        elif val >= 1e6: return f"${val/1e6:.2f}M"
+   592→        elif val >= 1e3: return f"${val/1e3:.1f}K"
+   593→        elif val > 0: return f"${val:.4f}"
+   594→        return "؟"
+   595→
+   596→    price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+   597→
+   598→    text = f"""
+   599→🔥 <b>تجميع حيتان!</b> ⚡
+   600→
+   601→⏰ <b>الوقت:</b> {datetime.now(cairo_tz).strftime('%H:%M:%S')} ({datetime.now(cairo_tz).strftime('%d/%m/%Y')})
+   602→
+   603→🪙 <b>العملة:</b> {token_symbol}{age_str}
+   604→🐋 <b>عدد الحيتان:</b> {unique_whales} حيتان في {duration_min:.0f} دقيقة
+   605→💰 <b>إجمالي الشراء:</b> {format_usd(total_usd)} ({total_sol:.2f} SOL)
+   606→
+   607→<b>الحيتان اللي اشتروا:</b>
+   608→{whales_list}
+   609→📊 <b>السعر الحالي:</b> {price_str}
+   610→💧 <b>السيولة:</b> {format_usd(liquidity)}
+   611→📈 <b>الحجم 24h:</b> {format_usd(volume)}
+   612→🏷️ <b>Market Cap:</b> {format_usd(mcap)}
+   613→🔗 <b>DEX:</b> {dex}
+   614→
+   615→🔗 <a href="{url}">DexScreener</a>
+   616→⚠️ <b>تنبيه:</b> ده إشارة قوية إن العملة دي بتجذب حيتان كتير - تابعها بجدية!
+   617→"""
+   618→    log.info(f"🔥 Accumulation alert: {token_symbol} - {unique_whales} whales in {duration_min:.0f}min")
+   619→    await send_telegram(text, session)
+   620→    mark_accumulation_alert_sent(token_address)
+   621→
+   622→async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol_price: float):
+   623→    """إرسال إشعار شراء على Telegram - real-time مع الوقت + Market Cap"""
+   624→    name = whale.get("name", "Unknown Whale")
+   625→    note = whale.get("note", "")
+   626→    token_mint = buy["token_mint"]
+   627→
+   628→    # الوقت الحالي بدقة الثانية
+   629→    now = time.time()
+   630→    tx_time = buy.get("timestamp", now)
+   631→    delay_seconds = int(now - tx_time)
+   632→
+   633→    # صياغة الوقت
+   634→    from datetime import datetime, timezone, timedelta
+   635→    cairo_tz = timezone(timedelta(hours=3))  # توقيت القاهرة
+   636→    tx_dt = datetime.fromtimestamp(tx_time, tz=cairo_tz)
+   637→    tx_time_str = tx_dt.strftime("%H:%M:%S")
+   638→    tx_date_str = tx_dt.strftime("%d/%m/%Y")
+   639→
+   640→    # delay string
+   641→    if delay_seconds < 5:
+   642→        delay_str = "⚡ لحظي!"
+   643→    elif delay_seconds < 60:
+   644→        delay_str = f"⚡ {delay_seconds} ثانية"
+   645→    else:
+   646→        delay_str = f"{delay_seconds // 60} دقيقة"
+   647→
+   648→    # نحاول نجيب معلومات العملة من DexScreener
+   649→    info = await get_token_info(session, token_mint)
+   650→
+   651→    if info:
+   652→        symbol = info.get("symbol", "???")
+   653→        token_name = info.get("name", "Unknown")
+   654→        price = info.get("price_usd", 0)
+   655→        liquidity = info.get("liquidity_usd", 0)
+   656→        volume = info.get("volume_24h", 0)
+   657→        mcap = info.get("market_cap", 0)
+   658→        dex = info.get("dex_id", "?")
+   659→        url = info.get("url", "")
+   660→        created = info.get("pair_created_at")
+   661→
+   662→        # هل العملة جديدة؟
+   663→        age_str = ""
+   664→        if created:
+   665→            age_h = (int(time.time() * 1000) - created) / 3600000
+   666→            if age_h < 1:
+   667→                age_str = f" 🆕 جديده! ({int(age_h * 60)} دقيقة)"
+   668→            elif age_h < 24:
+   669→                age_str = f" 🆕 جديده! ({age_h:.1f} ساعة)"
+   670→            else:
+   671→                age_str = f" ({age_h / 24:.1f} يوم)"
+   672→    else:
+   673→        symbol = "???"
+   674→        token_name = "Unknown"
+   675→        price = 0
+   676→        liquidity = 0
+   677→        volume = 0
+   678→        mcap = 0
+   679→        dex = "?"
+   680→        url = f"https://solscan.io/token/{token_mint}"
+   681→        age_str = ""
+   682→
+   683→    # صياغة Market Cap بشكل مختصر
+   684→    def format_usd(val):
+   685→        if val >= 1_000_000_000:
+   686→            return f"${val/1e9:.2f}B"
+   687→        elif val >= 1_000_000:
+   688→            return f"${val/1e6:.2f}M"
+   689→        elif val >= 1_000:
+   690→            return f"${val/1e3:.1f}K"
+   691→        elif val > 0:
+   692→            return f"${val:.2f}"
+   693→        return "؟"
+   694→
+   695→    # صياغة الرسالة - مع الوقت + Market Cap واضح
+   696→    usd_str = f"${buy['value_usd']:,.0f}" if buy.get("value_usd") else "؟"
+   697→    sol_str = f"{buy['sol_amount']:.2f} SOL"
+   698→    price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+   699→
+   700→    text = f"""
+   701→🚨 <b>حوت اشترى!</b> {delay_str}
+   702→
+   703→⏰ <b>الوقت:</b> {tx_time_str} ({tx_date_str}) - توقيت القاهرة
+   704→👤 <b>الحوت:</b> {name}
+   705→{f"📝 {note}" if note else ""}
+   706→
+   707→🪙 <b>العملة:</b> {symbol} - {token_name}{age_str}
+   708→💰 <b>قيمة الشراء:</b> {usd_str} ({sol_str})
+   709→📊 <b>السعر:</b> {price_str}
+   710→💧 <b>السيولة:</b> {format_usd(liquidity)}
+   711→📈 <b>الحجم 24h:</b> {format_usd(volume)}
+   712→🏷️ <b>Market Cap:</b> {format_usd(mcap)}
+   713→🔗 <b>DEX:</b> {dex}
+   714→
+   715→🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">Solscan TX</a>
+   716→🏦 <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>
+   717→"""
+   718→    log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
+   719→    await send_telegram(text, session)
+   720→
+   721→async def get_sol_price(session: aiohttp.ClientSession) -> float:
+   722→    """سعر SOL من DexScreener"""
+   723→    try:
+   724→        # SOL/USDC pair على Raydium
+   725→        url = "https://api.dexscreener.com/pairs/solana/58oQChx4yWmvKdwLLZzBi4ChoCc2fqCUWBkwMihLYQo2"
+   726→        async with session.get(url, timeout=10) as resp:
+   727→            if resp.status == 200:
+   728→                data = await resp.json()
+   729→                if data:
+   730→                    return float(data[0].get("priceUsd", 0) or 0)
+   731→    except Exception as e:
+   732→        log.error(f"Error getting SOL price: {e}")
+   733→    return 0
+   734→
+   735→# ==================== Bot Commands (للإدارة من التيليجرام) ====================
+   736→async def handle_telegram_updates(session: aiohttp.ClientSession):
+   737→    """استقبال أوامر من التيليجرام (لإضافة/حذف محافظ)"""
+   738→    offset = 0
+   739→    while True:
+   740→        try:
+   741→            url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/getUpdates"
+   742→            params = {"offset": offset, "timeout": 25}
+   743→            async with session.get(url, params=params, timeout=30) as resp:
+   744→                if resp.status != 200:
+   745→                    await asyncio.sleep(5)
+   746→                    continue
+   747→                data = await resp.json()
+   748→                if not data.get("ok"):
+   749→                    await asyncio.sleep(5)
+   750→                    continue
+   751→                for update in data.get("result", []):
+   752→                    offset = update["update_id"] + 1
+   753→                    msg = update.get("message", {})
+   754→                    text = msg.get("text", "")
+   755→                    chat_id = str(msg.get("chat", {}).get("id", ""))
+   756→                    if chat_id != TELEGRAM_CHAT_ID:
+   757→                        continue  # تجاهل رسائل من الناس التانيين
+   758→                    await handle_command(text, session)
+   759→        except asyncio.TimeoutError:
+   760→            continue
+   761→        except Exception as e:
+   762→            log.error(f"TG updates error: {e}")
+   763→            await asyncio.sleep(5)
+   764→
+   765→async def handle_command(text: str, session: aiohttp.ClientSession):
+   766→    """معالجة أوامر المستخدم"""
+   767→    parts = text.strip().split()
+   768→    if not parts:
+   769→        return
+   770→    cmd = parts[0].lower()
+   771→    reply = ""
+   772→
+   773→    if cmd == "/start" or cmd == "/help":
+   774→        reply = f"""🐋 <b>بوت تتبع حيتان Meme Coins</b>
+   775→
+   776→<b>الأوامر:</b>
+   777→📋 /list - عرض كل المحافظ المتابعة
+   778→➕ /add &lt;address&gt; &lt;name&gt; - إضافة محفظة
+   779→➖ /remove &lt;address&gt; - حذف محفظة
+   780→📊 /stats - إحصائيات سريعة
+   781→🔍 /check &lt;address&gt; - بيانات أي عملة فوراً
+   782→🔔 /test - إشعار تجريبي للتأكد إن البوت شغال
+   783→
+   784→<b>الإعدادات الحالية:</b>
+   785→💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}
+   786→⏱️ فترة الفحص: كل {POLL_SECONDS} ثانية
+   787→🐋 المحافظ المتابعة: {len(get_all_whales())}
+   788→
+   789→البوت بيراقب المحافظ وبيبعتلك إشعار فوري على موبايلك لما أي حوت يشتري meme coin.
+   790→كل إشعار فيه: اسم الحوت، العملة، قيمة الشراء، السعر، السيولة، الحجم، Market Cap، والوقت بتوقيت القاهرة.
+   791→"""
+   792→    elif cmd == "/list":
+   793→        whales = get_all_whales()
+   794→        if not whales:
+   795→            reply = "مفيش محافظ في القائمة."
+   796→        else:
+   797→            reply = f"📋 <b>المحافظ المتابعة ({len(whales)}):</b>\n\n"
+   798→            for i, w in enumerate(whales, 1):
+   799→                reply += f"{i}. <b>{w.get('name', 'بدون اسم')}</b>\n   <code>{w['address']}</code>\n"
+   800→                if w.get('note'):
+   801→                    reply += f"   📝 {w['note']}\n"
+   802→    elif cmd == "/add":
+   803→        if len(parts) < 3:
+   804→            reply = "الاستخدام: /add <address> <name>\nمثال: /add 5CQw...HFMJ WhaleAlpha"
+   805→        else:
+   806→            address = parts[1]
+   807→            name = " ".join(parts[2:])
+   808→            add_user_whale(address, name)
+   809→            reply = f"✅ اتضافت المحفظة:\n<b>{name}</b>\n<code>{address}</code>\n\nالبوت هيبدأ يراقبها من دورة الفحص الجاية."
+   810→    elif cmd == "/remove":
+   811→        if len(parts) < 2:
+   812→            reply = "الاستخدام: /remove <address>"
+   813→        else:
+   814→            address = parts[1]
+   815→            if remove_user_whale(address):
+   816→                reply = f"✅ اتمسحت المحفظة:\n<code>{address}</code>"
+   817→            else:
+   818→                reply = f"❌ المحفظة دي مش موجودة في قائمتك (ممكن تكون من whales.py - امسحها يدوياً)"
+   819→    elif cmd == "/stats":
+   820→        conn = sqlite3.connect(DB_PATH)
+   821→        count = conn.execute("SELECT COUNT(*) FROM seen_txs").fetchone()[0]
+   822→        whales_count = len(get_all_whales())
+   823→        # نحسب إحصائيات RPC
+   824→        total_success = sum(s["success"] for s in rpc_stats.values())
+   825→        total_fail = sum(s["fail"] for s in rpc_stats.values())
+   826→        conn.close()
+   827→        reply = f"""📊 <b>إحصائيات البوت</b>
+   828→
+   829→🐋 محافظ متابعة: {whales_count}
+   830→📝 معاملات مرصودة: {count}
+   831→💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}
+   832→⏱️ فترة الفحص: كل {POLL_SECONDS} ثانية
+   833→
+   834→<b>إحصائيات RPC:</b>
+   835→✅ نجح: {total_success}
+   836→❌ فشل: {total_fail}
+   837→📊 نسبة النجاح: {(total_success / max(total_success + total_fail, 1)) * 100:.1f}%
+   838→"""
+   839→    elif cmd == "/check":
+   840→        if len(parts) < 2:
+   841→            reply = "الاستخدام: /check <token_address>\nمثال: /check Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump"
+   842→        else:
+   843→            token_address = parts[1]
+   844→            reply = "🔍 بجيب بيانات العملة..."
+   845→            await send_telegram(reply, session)
+   846→            info = await get_token_info(session, token_address)
+   847→            if info:
+   848→                def format_usd(val):
+   849→                    if val >= 1e9: return f"${val/1e9:.2f}B"
+   850→                    elif val >= 1e6: return f"${val/1e6:.2f}M"
+   851→                    elif val >= 1e3: return f"${val/1e3:.1f}K"
+   852→                    elif val > 0: return f"${val:.4f}"
+   853→                    return "؟"
+   854→                price = info.get("price_usd", 0)
+   855→                price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+   856→                created = info.get("pair_created_at")
+   857→                age_str = ""
+   858→                if created:
+   859→                    age_h = (int(time.time() * 1000) - created) / 3600000
+   860→                    if age_h < 1: age_str = f" ({int(age_h * 60)} دقيقة)"
+   861→                    elif age_h < 24: age_str = f" ({age_h:.1f} ساعة)"
+   862→                    else: age_str = f" ({age_h / 24:.1f} يوم)"
+   863→                reply = f"""🔍 <b>بيانات العملة</b>
+   864→
+   865→🪙 <b>الرمز:</b> {info['symbol']}
+   866→📌 <b>الاسم:</b> {info['name']}{age_str}
+   867→📊 <b>السعر:</b> {price_str}
+   868→💧 <b>السيولة:</b> {format_usd(info['liquidity_usd'])}
+   869→📈 <b>الحجم 24h:</b> {format_usd(info['volume_24h'])}
+   870→🏷️ <b>Market Cap:</b> {format_usd(info['market_cap'])}
+   871→🔗 <b>DEX:</b> {info['dex_id']}
+   872→
+   873→🔗 <a href="{info['url']}">DexScreener</a>
+   874→"""
+   875→            else:
+   876→                reply = "❌ مقدرتش ألاقي العملة دي. تأكد من العنوان."
+   877→    elif cmd == "/test":
+   878→        # إشعار تجريبي للتأكد إن البوت شغال
+   879→        from datetime import datetime, timezone, timedelta
+   880→        cairo_tz = timezone(timedelta(hours=3))
+   881→        now = datetime.now(cairo_tz)
+   882→        test_buy = {
+   883→            "token_mint": "Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump",
+   884→            "token_amount": 1000000,
+   885→            "sol_amount": 68.4,
+   886→            "value_usd": 12500,
+   887→            "signature": "test_signature_" + str(int(time.time())),
+   888→            "timestamp": int(time.time()),
+   889→        }
+   890→        test_whale = {
+   891→            "name": "🧪 تجربة - حوت وهمي",
+   892→            "address": "5CQwyYqXJtQqQqW5X8z2vYqXJtQqQqW5X8z2vYqXJtQqQ",
+   893→            "note": "هذا إشعار تجريبي للتأكد من عمل البوت",
+   894→        }
+   895→        await notify_buy(test_whale, test_buy, session, 182.5)
+   896→        return  # notify_buy بتبعت الرسالة
+   897→    else:
+   898→        return  # تجاهل الرسائل العادية
+   899→
+   900→    await send_telegram(reply, session)
+   901→
+   902→# ==================== التحقق من الإعدادات ====================
+   903→def check_config() -> bool:
+   904→    """التحقق من وجود القيم المطلوبة"""
+   905→    ok = True
+   906→    if not TELEGRAM_BOT_TOKEN:
+   907→        log.error("❌ TELEGRAM_BOT_TOKEN غير موجود في .env")
+   908→        ok = False
+   909→    if not TELEGRAM_CHAT_ID:
+   910→        log.error("❌ TELEGRAM_CHAT_ID غير موجود في .env - ابدأ محادثة مع البوت وبعت /start ثم استخدم @userinfobot")
+   911→        ok = False
+   912→    if not HELIUS_API_KEY:
+   913→        log.warning("⚠️ HELIUS_API_KEY مش موجود - البوت هيستخدم public RPCs (مجاني 100% بس أبطأ)")
+   914→        log.warning("💡 علشان تجيب Helius API key مجاني: https://www.helius.dev/")
+   915→    else:
+   916→        log.info("✅ Helius API key موجود - هيُستخدم كـ primary RPC")
+   917→    return ok
+   918→
+   919→# ==================== التشغيل ====================
+   920→async def main():
+   921→    log.info("🚀 بدء تشغيل بوت تتبع الحيتان")
+   922→    if not check_config():
+   923→        log.error("الإعدادات ناقصة. عدل .env وحاول تاني.")
+   924→        return
+   925→
+   926→    init_db()
+   927→    log.info(f"📋 عدد المحافظ المتابعة: {len(get_all_whales())}")
+   928→    log.info(f"💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}")
+   929→    log.info(f"⏱️ فترة الفحص: كل {POLL_SECONDS} ثانية")
+   930→
+   931→    async with aiohttp.ClientSession() as session:
+   932→        # إرسال رسالة تأكيد التشغيل
+   933→        await send_telegram(
+   934→            f"🚀 <b>البوت اشتغل!</b>\n\n🐋 محافظ متابعة: {len(get_all_whales())}\n💰 حد الشراء: ${MIN_BUY_USD:,.0f}\n\nللتحكم: /help",
+   935→            session
+   936→        )
+   937→
+   938→        # تشغيل listener الأوامر في الـ background
+   939→        asyncio.create_task(handle_telegram_updates(session))
+   940→
+   941→        # حلقة الفحص الرئيسية
+   942→        last_sol_price_update = 0
+   943→        sol_price = 0
+   944→        while True:
+   945→            try:
+   946→                # تحديث سعر SOL كل 60 ثانية
+   947→                if time.time() - last_sol_price_update > 60:
+   948→                    new_price = await get_sol_price(session)
+   949→                    if new_price > 0:
+   950→                        sol_price = new_price
+   951→                        last_sol_price_update = time.time()
+   952→                        log.info(f"💰 سعر SOL: ${sol_price:.2f}")
+   953→
+   954→                # فحص كل المحافظ بالتوازي (مع تحديد الـ concurrency)
+   955→                whales = get_all_whales()
+   956→                if whales:
+   957→                    tasks = [poll_whale(w, session, sol_price) for w in whales]
+   958→                    await asyncio.gather(*tasks, return_exceptions=True)
+   959→
+   960→                await asyncio.sleep(POLL_SECONDS)
+   961→            except KeyboardInterrupt:
+   962→                log.info("إيقاف البوت...")
+   963→                break
+   964→            except Exception as e:
+   965→                log.error(f"Main loop error: {e}")
+   966→                await asyncio.sleep(10)
+   967→
+   968→
+   969→if __name__ == "__main__":
+   970→    try:
+   971→        asyncio.run(main())
+   972→    except KeyboardInterrupt:
+   973→        log.info("تم الإيقاف")
+   974→
