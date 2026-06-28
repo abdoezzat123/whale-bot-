@@ -31,6 +31,7 @@ load_dotenv()
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
+MAX_BUY_USD = float(os.getenv("MAX_BUY_USD", "2000000"))  # فوق 2M نتجاهل
 POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))  # 5 ثواني = شبه real-time
 ONLY_FAMOUS = os.getenv("ONLY_FAMOUS", "false").strip().lower() == "true"  # فلترة الإشعارات
 
@@ -494,7 +495,7 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
 
                 # فلتر حسب الحد الأدنى + ONLY_FAMOUS
                 is_famous = whale.get("is_famous", False)
-                if value_usd >= MIN_BUY_USD:
+                if value_usd >= MIN_BUY_USD and value_usd <= MAX_BUY_USD:
                     # لو ONLY_FAMOUS=true، نبعت بس للمطورين المعروفين
                     if ONLY_FAMOUS and not is_famous:
                         pass  # نتجاهل الحيتان العاديين

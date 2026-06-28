@@ -36,6 +36,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 ETHERSCAN_API_KEY = os.getenv("ETHERSCAN_API_KEY", "").strip()
 MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
+MAX_BUY_USD = float(os.getenv("MAX_BUY_USD", "2000000"))
 POLL_SECONDS = int(os.getenv("ETH_POLL_SECONDS", "30"))  # Ethereum أبطأ من Solana
 
 # إعداد الـ logging
