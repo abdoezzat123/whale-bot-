@@ -1,0 +1,29 @@
+# ملفات Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+venv/
+.venv/
+
+# ملفات البيئة
+.env
+.env.local
+
+# قاعدة البيانات
+*.db
+data/
+
+# IDE
+.vscode/
+.idea/
+
+# Docker
+*.tar
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Logs
+*.log

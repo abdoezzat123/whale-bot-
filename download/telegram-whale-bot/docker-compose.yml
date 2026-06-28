@@ -1,0 +1,17 @@
+version: '3.8'
+
+services:
+  whale-bot:
+    build: .
+    container_name: whale-bot
+    restart: always
+    env_file:
+      - .env
+    volumes:
+      # حفظ الـ database خارج الـ container علشان ما يضيعش
+      - ./data:/app/data
+    logging:
+      driver: "json-file"
+      options:
+        max-size: "10m"
+        max-file: "3"
