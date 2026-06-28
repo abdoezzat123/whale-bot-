@@ -4,11 +4,12 @@
 - بيراقب محافظ الحيتان على شبكة Solana
 - بيبعت إشعار فوري على Telegram لما أي حوت يشتري meme coin
 - بيجيب بيانات العملة من DexScreener (مجاني)
+- يستخدم Multi-RPC مجاني بدون أي API key
 
 التشغيل:
   1. python3 -m venv venv && source venv/bin/activate
   2. pip install -r requirements.txt
-  3. املأ .env بالقيم (TELEGRAM_CHAT_ID و HELIUS_API_KEY)
+  3. املأ .env بالقيم (TELEGRAM_BOT_TOKEN و TELEGRAM_CHAT_ID)
   4. python bot.py
 """
 import os
@@ -17,6 +18,7 @@ import logging
 import sqlite3
 import time
 import json
+import random
 from typing import Dict, List, Optional, Set
 from pathlib import Path
 
@@ -28,12 +30,31 @@ load_dotenv()
 # ==================== الإعدادات ====================
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-HELIUS_API_KEY = os.getenv("HELIUS_API_KEY", "").strip()
 MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
 POLL_SECONDS = int(os.getenv("POLL_SECONDS", "30"))
 
-# Helius RPC URL
-HELIUS_RPC = f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}"
+# ==================== Multi-RPC Endpoints مجانية 100% ====================
+# لو عندك Helius API key، حطها في .env وهيُستخدم تلقائياً (أقوى وأسرع)
+HELIUS_API_KEY = os.getenv("HELIUS_API_KEY", "").strip()
+
+# قائمة RPC endpoints مجانية بترتيب الأولوية
+# Helius لو موجود، بعدها باقي الـ public RPCs
+PUBLIC_RPCS = [
+    "https://api.mainnet-beta.solana.com",                # Solana official (40 req/sec)
+    "https://solana-mainnet.rpc.extrnode.com",            # Triton public
+    "https://rpc.ankr.com/solana",                        # Ankr public
+    "https://solana-mainnet.g.alchemy.com/v2/demo",       # Alchemy demo
+    "https://mainnet.solana-rpc.com",                     # Public
+]
+
+# لو عندك Helius، نحطه الأول
+ALL_RPCS = []
+if HELIUS_API_KEY:
+    ALL_RPCS.append(f"https://mainnet.helius-rpc.com/?api-key={HELIUS_API_KEY}")
+ALL_RPCS.extend(PUBLIC_RPCS)
+
+# إحصائيات الـ RPCs (للتتبع أي endpoint أفضل)
+rpc_stats: Dict[str, Dict] = {rpc: {"success": 0, "fail": 0} for rpc in ALL_RPCS}
 
 # قاعدة بيانات SQLite بسيطة (file واحد)
 DB_PATH = Path(__file__).parent / "seen.db"
@@ -134,30 +155,60 @@ async def send_telegram(text: str, session: aiohttp.ClientSession):
     except Exception as e:
         log.error(f"Telegram exception: {e}")
 
-# ==================== Helius RPC ====================
-async def helius_rpc(session: aiohttp.ClientSession, method: str, params: list) -> Optional[Dict]:
+# ==================== Multi-RPC System ====================
+def get_sorted_rpcs() -> List[str]:
+    """ترتيب الـ RPCs حسب نسبة النجاح (الأفضل أولاً)"""
+    def score(rpc):
+        s = rpc_stats[rpc]["success"]
+        f = rpc_stats[rpc]["fail"]
+        return -(s / max(s + f, 1))  # أعلى نسبة نجاح الأول
+    return sorted(ALL_RPCS, key=score)
+
+async def rpc_call(session: aiohttp.ClientSession, method: str, params: list) -> Optional[Dict]:
+    """
+    استدعاء RPC method على عدة endpoints بالتوازي.
+    بترجع أول نتيجة ناجحة.
+    """
     payload = {"jsonrpc": "2.0", "id": 1, "method": method, "params": params}
-    try:
-        async with session.post(HELIUS_RPC, json=payload, timeout=30) as resp:
-            if resp.status != 200:
-                log.error(f"Helius {resp.status}: {await resp.text()}")
-                return None
-            data = await resp.json()
-            if "error" in data:
-                log.error(f"Helius error: {data['error']}")
-                return None
-            return data.get("result")
-    except Exception as e:
-        log.error(f"Helius exception: {e}")
-        return None
+    rpcs = get_sorted_rpcs()
+
+    # نجرّب أول 3 RPCs بالتوازي
+    async def try_rpc(rpc_url: str) -> Optional[Dict]:
+        try:
+            async with session.post(rpc_url, json=payload, timeout=15) as resp:
+                if resp.status != 200:
+                    rpc_stats[rpc_url]["fail"] += 1
+                    return None
+                data = await resp.json()
+                if "error" in data:
+                    rpc_stats[rpc_url]["fail"] += 1
+                    return None
+                rpc_stats[rpc_url]["success"] += 1
+                return data.get("result")
+        except Exception:
+            rpc_stats[rpc_url]["fail"] += 1
+            return None
+
+    # نجرّب أول 3 بالتوازي
+    tasks = [try_rpc(rpc) for rpc in rpcs[:3]]
+    for result in await asyncio.gather(*tasks, return_exceptions=False):
+        if result is not None:
+            return result
+
+    # لو كلهم فشلوا، نجرّب الباقي بالتتابع
+    for rpc in rpcs[3:]:
+        result = await try_rpc(rpc)
+        if result is not None:
+            return result
+    return None
 
 async def get_recent_signatures(session: aiohttp.ClientSession, address: str, limit: int = 8) -> List[Dict]:
-    result = await helius_rpc(session, "getSignaturesForAddress", [address, {"limit": limit}])
+    result = await rpc_call(session, "getSignaturesForAddress", [address, {"limit": limit}])
     return result if result else []
 
 async def get_parsed_tx(session: aiohttp.ClientSession, signature: str) -> Optional[Dict]:
-    result = await helius_rpc(session, "getTransaction",
-                              [signature, {"maxSupportedTransactionVersion": 0, "encoding": "jsonParsed"}])
+    result = await rpc_call(session, "getTransaction",
+                            [signature, {"maxSupportedTransactionVersion": 0, "encoding": "jsonParsed"}])
     return result
 
 # ==================== DexScreener ====================
