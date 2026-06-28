@@ -545,15 +545,23 @@ async def handle_command(text: str, session: aiohttp.ClientSession):
     reply = ""
 
     if cmd == "/start" or cmd == "/help":
-        reply = """🐋 <b>بوت تتبع حيتان Meme Coins</b>
+        reply = f"""🐋 <b>بوت تتبع حيتان Meme Coins</b>
 
-الأوامر:
-/list - عرض كل المحافظ المتابعة
-/add &lt;address&gt; &lt;name&gt; - إضافة محفظة
-/remove &lt;address&gt; - حذف محفظة
-/stats - إحصائيات سريعة
+<b>الأوامر:</b>
+📋 /list - عرض كل المحافظ المتابعة
+➕ /add &lt;address&gt; &lt;name&gt; - إضافة محفظة
+➖ /remove &lt;address&gt; - حذف محفظة
+📊 /stats - إحصائيات سريعة
+🔍 /check &lt;address&gt; - بيانات أي عملة فوراً
+🔔 /test - إشعار تجريبي للتأكد إن البوت شغال
 
-البوت بيراقب المحافظ وبيبعتلك إشعار فوري لما أي حوت يشتري meme coin بقيمة فوق الحد الأدنى ($""" + f"{MIN_BUY_USD:,.0f}" + """).
+<b>الإعدادات الحالية:</b>
+💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}
+⏱️ فترة الفحص: كل {POLL_SECONDS} ثانية
+🐋 المحافظ المتابعة: {len(get_all_whales())}
+
+البوت بيراقب المحافظ وبيبعتلك إشعار فوري على موبايلك لما أي حوت يشتري meme coin.
+كل إشعار فيه: اسم الحوت، العملة، قيمة الشراء، السعر، السيولة، الحجم، Market Cap، والوقت بتوقيت القاهرة.
 """
     elif cmd == "/list":
         whales = get_all_whales()
@@ -563,6 +571,8 @@ async def handle_command(text: str, session: aiohttp.ClientSession):
             reply = f"📋 <b>المحافظ المتابعة ({len(whales)}):</b>\n\n"
             for i, w in enumerate(whales, 1):
                 reply += f"{i}. <b>{w.get('name', 'بدون اسم')}</b>\n   <code>{w['address']}</code>\n"
+                if w.get('note'):
+                    reply += f"   📝 {w['note']}\n"
     elif cmd == "/add":
         if len(parts) < 3:
             reply = "الاستخدام: /add <address> <name>\nمثال: /add 5CQw...HFMJ WhaleAlpha"
@@ -570,7 +580,7 @@ async def handle_command(text: str, session: aiohttp.ClientSession):
             address = parts[1]
             name = " ".join(parts[2:])
             add_user_whale(address, name)
-            reply = f"✅ اتضافت المحفظة:\n{name}\n<code>{address}</code>"
+            reply = f"✅ اتضافت المحفظة:\n<b>{name}</b>\n<code>{address}</code>\n\nالبوت هيبدأ يراقبها من دورة الفحص الجاية."
     elif cmd == "/remove":
         if len(parts) < 2:
             reply = "الاستخدام: /remove <address>"
@@ -584,8 +594,80 @@ async def handle_command(text: str, session: aiohttp.ClientSession):
         conn = sqlite3.connect(DB_PATH)
         count = conn.execute("SELECT COUNT(*) FROM seen_txs").fetchone()[0]
         whales_count = len(get_all_whales())
+        # نحسب إحصائيات RPC
+        total_success = sum(s["success"] for s in rpc_stats.values())
+        total_fail = sum(s["fail"] for s in rpc_stats.values())
         conn.close()
-        reply = f"📊 <b>إحصائيات</b>\n\n🐋 محافظ متابعة: {whales_count}\n📝 معاملات مرصودة: {count}\n💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}"
+        reply = f"""📊 <b>إحصائيات البوت</b>
+
+🐋 محافظ متابعة: {whales_count}
+📝 معاملات مرصودة: {count}
+💰 حد الشراء الأدنى: ${MIN_BUY_USD:,.0f}
+⏱️ فترة الفحص: كل {POLL_SECONDS} ثانية
+
+<b>إحصائيات RPC:</b>
+✅ نجح: {total_success}
+❌ فشل: {total_fail}
+📊 نسبة النجاح: {(total_success / max(total_success + total_fail, 1)) * 100:.1f}%
+"""
+    elif cmd == "/check":
+        if len(parts) < 2:
+            reply = "الاستخدام: /check <token_address>\nمثال: /check Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump"
+        else:
+            token_address = parts[1]
+            reply = "🔍 بجيب بيانات العملة..."
+            await send_telegram(reply, session)
+            info = await get_token_info(session, token_address)
+            if info:
+                def format_usd(val):
+                    if val >= 1e9: return f"${val/1e9:.2f}B"
+                    elif val >= 1e6: return f"${val/1e6:.2f}M"
+                    elif val >= 1e3: return f"${val/1e3:.1f}K"
+                    elif val > 0: return f"${val:.4f}"
+                    return "؟"
+                price = info.get("price_usd", 0)
+                price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+                created = info.get("pair_created_at")
+                age_str = ""
+                if created:
+                    age_h = (int(time.time() * 1000) - created) / 3600000
+                    if age_h < 1: age_str = f" ({int(age_h * 60)} دقيقة)"
+                    elif age_h < 24: age_str = f" ({age_h:.1f} ساعة)"
+                    else: age_str = f" ({age_h / 24:.1f} يوم)"
+                reply = f"""🔍 <b>بيانات العملة</b>
+
+🪙 <b>الرمز:</b> {info['symbol']}
+📌 <b>الاسم:</b> {info['name']}{age_str}
+📊 <b>السعر:</b> {price_str}
+💧 <b>السيولة:</b> {format_usd(info['liquidity_usd'])}
+📈 <b>الحجم 24h:</b> {format_usd(info['volume_24h'])}
+🏷️ <b>Market Cap:</b> {format_usd(info['market_cap'])}
+🔗 <b>DEX:</b> {info['dex_id']}
+
+🔗 <a href="{info['url']}">DexScreener</a>
+"""
+            else:
+                reply = "❌ مقدرتش ألاقي العملة دي. تأكد من العنوان."
+    elif cmd == "/test":
+        # إشعار تجريبي للتأكد إن البوت شغال
+        from datetime import datetime, timezone, timedelta
+        cairo_tz = timezone(timedelta(hours=3))
+        now = datetime.now(cairo_tz)
+        test_buy = {
+            "token_mint": "Tqj8yFmagrg7oorpQkVGYR52r96RFTamvWfth9bpump",
+            "token_amount": 1000000,
+            "sol_amount": 68.4,
+            "value_usd": 12500,
+            "signature": "test_signature_" + str(int(time.time())),
+            "timestamp": int(time.time()),
+        }
+        test_whale = {
+            "name": "🧪 تجربة - حوت وهمي",
+            "address": "5CQwyYqXJtQqQqW5X8z2vYqXJtQqQqW5X8z2vYqXJtQqQ",
+            "note": "هذا إشعار تجريبي للتأكد من عمل البوت",
+        }
+        await notify_buy(test_whale, test_buy, session, 182.5)
+        return  # notify_buy بتبعت الرسالة
     else:
         return  # تجاهل الرسائل العادية
 
@@ -602,8 +684,10 @@ def check_config() -> bool:
         log.error("❌ TELEGRAM_CHAT_ID غير موجود في .env - ابدأ محادثة مع البوت وبعت /start ثم استخدم @userinfobot")
         ok = False
     if not HELIUS_API_KEY:
-        log.error("❌ HELIUS_API_KEY غير موجود في .env - سجل من https://www.helius.dev/")
-        ok = False
+        log.warning("⚠️ HELIUS_API_KEY مش موجود - البوت هيستخدم public RPCs (مجاني 100% بس أبطأ)")
+        log.warning("💡 علشان تجيب Helius API key مجاني: https://www.helius.dev/")
+    else:
+        log.info("✅ Helius API key موجود - هيُستخدم كـ primary RPC")
     return ok
 
 # ==================== التشغيل ====================
