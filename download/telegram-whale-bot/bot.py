@@ -717,7 +717,9 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     text = f"""{header} {delay_str}
 
 👤 {name}
-🪙 {symbol} - {token_name}{age_str}
+
+🪙 <b>{symbol}</b> - {token_name}{age_str}
+
 💰 شراء: {usd_str} ({sol_str})
 🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
 📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}

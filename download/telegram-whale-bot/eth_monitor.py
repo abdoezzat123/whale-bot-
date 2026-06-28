@@ -286,21 +286,16 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
             text = f"""
 {alert_emoji} {alert_title}
 
-⏰ <b>الوقت:</b> {tx_time_str} ({tx_date_str}) - توقيت القاهرة
-👤 <b>الحوت:</b> {name}
-{f"📝 {note}" if note else ""}
-{f"📡 المصدر: {source}" if source else ""}
+👤 {name}
 
-🪙 <b>العملة:</b> {symbol} - {token_name}
-💰 <b>قيمة الشراء:</b> {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
-📊 <b>السعر:</b> {price_str}
-💧 <b>السيولة:</b> {format_usd(liquidity)}
-📈 <b>الحجم 24h:</b> {format_usd(volume)}
-🏷️ <b>Market Cap:</b> {format_usd(mcap)}
-🔗 <b>DEX:</b> {dex}
+🪙 <b>{symbol}</b> - {token_name}
 
-🔗 <a href="{url}">DexScreener</a> | <a href="https://etherscan.io/tx/{buy['tx_hash']}">Etherscan TX</a>
-🏦 <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>
+💰 شراء: {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
+🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
+📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
+⏰ {tx_time_str} ({tx_date_str})
+
+🔗 <a href="{url}">DexScreener</a> | <a href="https://etherscan.io/tx/{buy['tx_hash']}">TX</a> | <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>
 {warning}
 """
             log.info(f"📤 ETH buy alert: {name} bought {symbol} ({format_usd(value_usd)})")
