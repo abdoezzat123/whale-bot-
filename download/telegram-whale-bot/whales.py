@@ -198,98 +198,98 @@ SOLANA_WHALES = [
     # كلهم نشطين جداً (شراء في آخر دقايق - 28 يونيو 2026)
     # =========================================================
     {
-        "name": "mad_apes Buyer #1 🔥",
+        "name": "@mad_apes_gambles #1 🔥",
         "address": "8SveFUanfbLRMsL6NAXa1LCMmLEsUc7q7KhFBufscG5Y",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #2 🔥",
+        "name": "@mad_apes_gambles #2 🔥",
         "address": "4deoR3reSeNwQkqN8VY9g3cETtZAtVCWRPtKPFANnXCQ",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #3 🔥",
+        "name": "@mad_apes_gambles #3 🔥",
         "address": "CPExkvXrahtthv34Q76H4kKaxkqAZwfQyrrW874gp9XK",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #4 🔥",
+        "name": "@mad_apes_gambles #4 🔥",
         "address": "2GHcUSEjvu1XPraXRBQmqNX9sboQ8ey23nD7zEXVKWMN",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #5 🔥",
+        "name": "@mad_apes_gambles #5 🔥",
         "address": "4eLNPmGbKp9Bpkqa6EUNnz35QX9peyeUpTWsEYjvwe9L",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #6 🔥",
+        "name": "@mad_apes_gambles #6 🔥",
         "address": "HRVrTeUsUqwhR5UafqTn3mtNLx2ig23SfnFdBJhw4nPf",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #7 🔥",
+        "name": "@mad_apes_gambles #7 🔥",
         "address": "H6EtpNNizCppByyt5Jj5bmpm1GN9MMpBoycBzDhiWrQS",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #8 🔥",
+        "name": "@mad_apes_gambles #8 🔥",
         "address": "HaMJe7vbc1Fe8B15RQzHcq21jnYAi38kD7AhiU2oPkUH",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #9 🔥",
+        "name": "@mad_apes_gambles #9 🔥",
         "address": "5wBMHXgX4Wmopf9jJYL8jeRyv1cTtx3U2NPwAJrZ3u89",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #10 🔥",
+        "name": "@mad_apes_gambles #10 🔥",
         "address": "GbqAr8vz1Mwr7JzuPys6xqjoUYfb19Hdncua9nk94r7e",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #11 🔥",
+        "name": "@mad_apes_gambles #11 🔥",
         "address": "HAWK3BVnwptKRFYfVoVGhBc2TYxpyG9jmAbkHeW9tyKE",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #12 🔥",
+        "name": "@mad_apes_gambles #12 🔥",
         "address": "13G3iHZ4v4dGUxmFKHLTXxw5XSAt24orRvMRMStf2ojP",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #13 🔥",
+        "name": "@mad_apes_gambles #13 🔥",
         "address": "DcfdE6XWgmg91iCihsNNAYcGvUPDVU1weVxuYCDyWKNF",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #14 🔥",
+        "name": "@mad_apes_gambles #14 🔥",
         "address": "AQxbJtiqRE9vqvprKbyVJg9ftPRwwPRC2jsJQ9jMRDTt",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
     {
-        "name": "mad_apes Buyer #15 🔥",
+        "name": "@mad_apes_gambles #15 🔥",
         "address": "45oM9h5wrHC6EmrdsgJW3SNUUqsKoSASFxfEULuuefpa",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
     },
 
     {
-        "name": "mad_apes Buyer #16 🔥",
+        "name": "@mad_apes_gambles #16 🔥",
         "address": "CisK9hXjoUJBGtPxZHcimqtRsXgwPnRQ2CjBzFB2wJAK",
         "note": "📢 من @mad_apes - أوائل مشتري",
         "source": "mad_apes_gambles",
@@ -299,13 +299,13 @@ SOLANA_WHALES = [
     # 📢 من قناة @GemsofRa - الحوت اللي بيشتري قبل الـ launch
     # =========================================================
     {
-        "name": "GemsofRa Whale 🔥",
+        "name": "@GemsofRa Whale 🔥",
         "address": "6VKwjoZgzQjfXpxJ9SMo7BYRxHh71xtSLuxzbJ8LXoeF",
         "note": "📢 من @GemsofRa - حوت نشط جداً (آخر معاملة 3 دقايق)",
         "source": "GemsofRa",
     },
     {
-        "name": "GemsofRa Pump.fun Token",
+        "name": "@GemsofRa Pump.fun",
         "address": "Ch1Nk69Q82HQeVkTsERPjYETuomgZbpVpK3mCiKEpump",
         "note": "📢 من @GemsofRa - Pump.fun (نشط أسبوعي)",
         "source": "GemsofRa",
@@ -478,31 +478,31 @@ ETH_WHALES = [
     # 📢 من قناة @ETHTRENDING - محافظ الـ callers النشطة
     # =========================================================
     {
-        "name": "ETHTRENDING Caller #1 🔥",
+        "name": "@ETHTRENDING #1 🔥",
         "address": "0x975a378eba776a9fa5419c3305d3533779fb8187",
         "note": "📢 من @ETHTRENDING - نشط جداً",
         "source": "ETHTRENDING",
     },
     {
-        "name": "ETHTRENDING Caller #3 🔥",
+        "name": "@ETHTRENDING #3 🔥",
         "address": "0x11b9c971185aba5f7a76595dacff8a92bd6d613e",
         "note": "📢 من @ETHTRENDING - نشط جداً",
         "source": "ETHTRENDING",
     },
     {
-        "name": "ETHTRENDING Caller #4 🔥",
+        "name": "@ETHTRENDING #4 🔥",
         "address": "0x30ce5b150a8acc1599ea2720eb88b754c5f69e1a",
         "note": "📢 من @ETHTRENDING - نشط جداً",
         "source": "ETHTRENDING",
     },
     {
-        "name": "ETHTRENDING Caller #6 🔥",
+        "name": "@ETHTRENDING #6 🔥",
         "address": "0x44e164da74a5727536ce45f7d8e9f4847043602d",
         "note": "📢 من @ETHTRENDING - نشط جداً",
         "source": "ETHTRENDING",
     },
     {
-        "name": "ETHTRENDING Caller #7 🔥",
+        "name": "@ETHTRENDING #7 🔥",
         "address": "0x398fa5dedc3d95570706946c410e0bfa57f7b49f",
         "note": "📢 من @ETHTRENDING - نشط جداً",
         "source": "ETHTRENDING",
@@ -513,19 +513,19 @@ ETH_WHALES = [
     # =========================================================
     # من عملة SUKI
     {
-        "name": "NeoCallss SUKI Buyer #1",
+        "name": "@NeoCallss SUKI #1",
         "address": "0x018d771bcbeb97a34323bb0d0068cc0ee5bc44b6",
         "note": "📢 من @NeoCallss - أوائل مشتري SUKI",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss SUKI Buyer #2",
+        "name": "@NeoCallss SUKI #2",
         "address": "0x292482b2ad2175b873a8cacc4832117a9d9d99d9",
         "note": "📢 من @NeoCallss - أوائل مشتري SUKI",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss SUKI Buyer #3",
+        "name": "@NeoCallss SUKI #3",
         "address": "0x4106388e2d1fe939bdb98112693c2bc62adb0ef5",
         "note": "📢 من @NeoCallss - أوائل مشتري SUKI",
         "source": "NeoCallss",
@@ -533,19 +533,19 @@ ETH_WHALES = [
 
     # من عملة VITALIK
     {
-        "name": "NeoCallss VITALIK Buyer #1",
+        "name": "@NeoCallss VITALIK #1",
         "address": "0xf2da4643b573042ce685baa36a855a8812e5cf31",
         "note": "📢 من @NeoCallss - أوائل مشتري VITALIK",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss VITALIK Buyer #2",
+        "name": "@NeoCallss VITALIK #2",
         "address": "0x892fd5b6bc4f0d1aed7603ff80bd8806677fba22",
         "note": "📢 من @NeoCallss - أوائل مشتري VITALIK",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss VITALIK Buyer #3",
+        "name": "@NeoCallss VITALIK #3",
         "address": "0x96ccfc47aba551b0042c28a1abb385c1e1175407",
         "note": "📢 من @NeoCallss - أوائل مشتري VITALIK",
         "source": "NeoCallss",
@@ -553,13 +553,13 @@ ETH_WHALES = [
 
     # من عملة MAOMAO
     {
-        "name": "NeoCallss MAOMAO Buyer #1",
+        "name": "@NeoCallss MAOMAO #1",
         "address": "0xeeeb7abb74929f39f27cae699e9a92e74ce8dec5",
         "note": "📢 من @NeoCallss - أوائل مشتري MAOMAO",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss MAOMAO Buyer #2",
+        "name": "@NeoCallss MAOMAO #2",
         "address": "0x0c5c2f7cc62eef5e921eadd5e59e232fd85d99c4",
         "note": "📢 من @NeoCallss - أوائل مشتري MAOMAO",
         "source": "NeoCallss",
@@ -567,13 +567,13 @@ ETH_WHALES = [
 
     # من عملة Clawd
     {
-        "name": "NeoCallss Clawd Buyer #1",
+        "name": "@NeoCallss Clawd #1",
         "address": "0x29bbace690d8f70dd161fcafcc2f028f49131bcd",
         "note": "📢 من @NeoCallss - أوائل مشتري Clawd",
         "source": "NeoCallss",
     },
     {
-        "name": "NeoCallss Clawd Buyer #2",
+        "name": "@NeoCallss Clawd #2",
         "address": "0x3c69e62c1bbabde7fc6997a66dae659559381821",
         "note": "📢 من @NeoCallss - أوائل مشتري Clawd",
         "source": "NeoCallss",
@@ -583,7 +583,7 @@ ETH_WHALES = [
     # 📢 من قناة @mad_apes_gambles
     # =========================================================
     {
-        "name": "mad_apes_gambles Wallet",
+        "name": "@mad_apes_gambles Wallet",
         "address": "0xbef41084a6d65e750c3a44c97e92397a16e4d756",
         "note": "📢 من @mad_apes_gambles",
         "source": "mad_apes_gambles",
