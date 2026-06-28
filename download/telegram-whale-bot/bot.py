@@ -32,6 +32,7 @@ TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
 MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
 POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))  # 5 ثواني = شبه real-time
+ONLY_FAMOUS = os.getenv("ONLY_FAMOUS", "false").strip().lower() == "true"  # فلترة الإشعارات
 
 # ==================== Multi-RPC Endpoints مجانية 100% ====================
 # لو عندك Helius API key، حطها في .env وهيُستخدم تلقائياً (أقوى وأسرع)
@@ -368,17 +369,16 @@ def analyze_buy_tx(tx_data: Dict, whale_address: str) -> Optional[Dict]:
     """
     تحليل معاملة وتحديد لو فيها عملية شراء meme coin.
 
-    منطق بسيط:
-    - لو فيه transfer لـ WSOL خارج من المحفظة (الحوت دفع SOL)
-    - وفي نفس الوقت transfer لـ token جاي للمحفظة (الحوت استلم عملة)
+    المنطق المطوّر (أكتر شمولية):
+    - أي token جديد دخل للمحفظة (بعد أي نوع من الدفع: SOL, USDC, أو swap)
     - يبقى ده "شراء"
 
     بيرجع:
     {
         "token_mint": str,
         "token_amount": float,
-        "sol_amount": float,
-        "value_usd": float,  # بنحسبه من سعر SOL
+        "sol_amount": float,  # تقديري من تغير الـ SOL
+        "value_usd": float,
         "signature": str,
         "timestamp": int,
     }
@@ -392,8 +392,6 @@ def analyze_buy_tx(tx_data: Dict, whale_address: str) -> Optional[Dict]:
         if not msg or msg.get("err"):
             return None
 
-        inner_instructions = msg.get("innerInstructions", []) or []
-        # نطبق كل الـ token transfers من الـ inner instructions + outer
         pre_token_balances = msg.get("preTokenBalances", []) or []
         post_token_balances = msg.get("postTokenBalances", []) or []
 
@@ -419,6 +417,10 @@ def analyze_buy_tx(tx_data: Dict, whale_address: str) -> Optional[Dict]:
         for mint, change in balance_changes.items():
             if mint == WSOL_MINT:
                 continue
+            # نتجاهل الـ stablecoins المعروفة (USDC, USDT)
+            if mint in ["EPjFWdd5AufqSSqeM2qN1xzybapC8G4wEGGkZwyTDt1v",  # USDC
+                         "Es9vMFrzaCERmJfrF4H2FYD4KCoNkY11McCe8BenwNYB"]:  # USDT
+                continue
             diff = (change["after"] or 0) - (change["before"] or 0)
             if diff > 0:  # زاد الرصيد = استلم tokens
                 bought_tokens.append({
@@ -441,14 +443,15 @@ def analyze_buy_tx(tx_data: Dict, whale_address: str) -> Optional[Dict]:
             pass
 
         total_sol_out = -sol_diff + max(0, -fee_payer_balance_change)
-        if not bought_tokens or total_sol_out <= 0:
+
+        # ✅ المنطق الجديد المُطوّر:
+        # لو فيه tokens اتشترت (دخلت للمحفظة) - نبعت إشعار بغض النظر عن طريقة الدفع
+        if not bought_tokens:
             return None
 
         # نختار أكبر token تم شراؤه
         biggest = max(bought_tokens, key=lambda t: t["amount"])
-        # تحويل lamports to SOL (token amount بـ uiAmount بالفعل، بس SOL الخام بالـ lamports)
-        # sol_diff هنا بالفعل uiAmount (wrapped SOL) - يعني بالـ SOL الحقيقي
-        sol_paid = total_sol_out
+        sol_paid = total_sol_out if total_sol_out > 0 else 0
 
         return {
             "token_mint": biggest["mint"],
@@ -489,10 +492,15 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
                 value_usd = buy["sol_amount"] * sol_price if sol_price else 0
                 buy["value_usd"] = value_usd
 
-                # فلتر حسب الحد الأدنى
+                # فلتر حسب الحد الأدنى + ONLY_FAMOUS
+                is_famous = whale.get("is_famous", False)
                 if value_usd >= MIN_BUY_USD:
-                    # نرسل إشعار الشراء العادي
-                    await notify_buy(whale, buy, session, sol_price)
+                    # لو ONLY_FAMOUS=true، نبعت بس للمطورين المعروفين
+                    if ONLY_FAMOUS and not is_famous:
+                        pass  # نتجاهل الحيتان العاديين
+                    else:
+                        # نرسل إشعار الشراء العادي
+                        await notify_buy(whale, buy, session, sol_price)
 
                     # نسجل العملية في قاعدة البيانات (علشان التجميع)
                     # نجيب الـ symbol من DexScreener بسرعة
@@ -695,13 +703,13 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     # صياغة الرسالة - أبسط وأوضح
     usd_str = f"${buy['value_usd']:,.0f}" if buy.get("value_usd") else "؟"
     sol_str = f"{buy['sol_amount']:.2f} SOL"
-    price_str = f"${price:.8f}" if price < 0.01 else f"${price:.4f}"
+    price_str = f"${price:.10f}" if price < 0.001 else (f"${price:.6f}" if price < 0.01 else f"${price:.4f}")
 
     # إشعار خاص للمطورين المعروفين
     is_famous = whale.get("is_famous", False)
     if is_famous:
         header = "🚨🏆 مطور معروف اشترى!"
-        footer = "\n⚠️ مطور مشهور - العملة دي ممكن تطير 5x-100x!"
+        footer = "\n⚠️ مطور مشهور - ممكن تطير 5x-100x!"
     else:
         header = "🐋 حوت اشترى!"
         footer = ""
