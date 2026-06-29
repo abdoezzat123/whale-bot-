@@ -232,7 +232,7 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
 
     cairo_tz = timezone(timedelta(hours=3))
     tx_dt = datetime.fromtimestamp(buy["timestamp"], tz=cairo_tz)
-    tx_time_str = tx_dt.strftime("%H:%M:%S")
+    tx_time_str = tx_dt.strftime("%I:%M:%S %p")
     tx_date_str = tx_dt.strftime("%d/%m/%Y")
 
     delay_seconds = int(time.time() - buy["timestamp"])
@@ -293,7 +293,7 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
 💰 {format_usd(value_usd)}
 🏷️ {format_usd(mcap)}
 ⏰ شراء: {tx_time_str}
-📡 وصول: {datetime.now(cairo_tz).strftime("%H:%M:%S")}
+📡 وصول: {datetime.now(cairo_tz).strftime("%I:%M:%S %p")}
 
 🔗 <a href="{ds_link}">Chart</a> | <a href="{tx_link}">TX</a>{footer}
 """

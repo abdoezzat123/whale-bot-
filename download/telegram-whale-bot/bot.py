@@ -735,7 +735,7 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     from datetime import datetime, timezone, timedelta
     cairo_tz = timezone(timedelta(hours=3))  # توقيت القاهرة
     tx_dt = datetime.fromtimestamp(tx_time, tz=cairo_tz)
-    tx_time_str = tx_dt.strftime("%H:%M:%S")
+    tx_time_str = tx_dt.strftime("%I:%M:%S %p")
     tx_date_str = tx_dt.strftime("%d/%m/%Y")
 
     # delay string
@@ -827,7 +827,7 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
 💰 {usd_str}
 🏷️ {format_usd(mcap)}
 ⏰ شراء: {tx_time_str}
-📡 وصول: {datetime.now(cairo_tz).strftime("%H:%M:%S")}
+📡 وصول: {datetime.now(cairo_tz).strftime("%I:%M:%S %p")}
 
 🔗 <a href="{ds_link}">Chart</a> | <a href="{tx_link}">TX</a>{safety_text}
 """
