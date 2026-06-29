@@ -282,18 +282,21 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
                 header = f"🐋 <b>{name}</b> اشترى على ETH!"
                 footer = ""
 
+            tx_link = f"https://etherscan.io/tx/{buy['tx_hash']}"
+            wallet_link = f"https://etherscan.io/address/{whale['address']}"
+            
             text = f"""{header} {delay_str}
 
 🪙 <b>{symbol}</b> - {token_name}
-📋 <code>{buy.get('token_address', '?')}</code>
+<code>{buy.get('token_address', '?')}</code>
 
-💰 شراء: {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
-🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
-📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
+💰 {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
+🏷️ {format_usd(mcap)} | 💧 {format_usd(liquidity)}
+📊 {price_str} | 📈 {format_usd(volume)}
 
 ⏰ <b>{tx_time_str}</b> ({tx_date_str})
 
-🔗 <a href="{url}">DexScreener</a> | <a href="https://etherscan.io/tx/{buy['tx_hash']}">TX</a> | <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>{footer}
+🔗 <a href="{url}">Chart</a> | <a href="{tx_link}">TX</a> | <a href="{wallet_link}">Wallet</a>{footer}
 """
             log.info(f"📤 ETH buy alert: {name} bought {symbol} ({format_usd(value_usd)})")
             await send_telegram(text, session)
@@ -322,21 +325,15 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
             return
 
     # لو شراء بـ ETH مباشرة
-    text = f"""
-🚨 <b>حوت ETH اشترى!</b> {delay_str}
+    tx_link = f"https://etherscan.io/tx/{buy['tx_hash']}"
+    wallet_link = f"https://etherscan.io/address/{whale['address']}"
+    
+    text = f"""🐋 <b>{name}</b> ETH! {delay_str}
 
-⏰ <b>الوقت:</b> {tx_time_str} ({tx_date_str}) - توقيت القاهرة
-👤 <b>الحوت:</b> {name}
-{f"📝 {note}" if note else ""}
-{f"📡 المصدر: {source}" if source else ""}
+💰 {value_str}
+⏰ <b>{tx_time_str}</b> ({tx_date_str})
 
-💰 <b>قيمة الشراء:</b> {value_str}
-🔗 <b>DEX:</b> Uniswap
-
-🔗 <a href="https://etherscan.io/tx/{buy['tx_hash']}">Etherscan TX</a>
-🏦 <a href="https://etherscan.io/address/{whale['address']}">المحفظة</a>
-
-⚠️ <b>ملاحظة:</b> البوت بيراقب ETH outgoing لـ Uniswap. للتفاصيل الكاملة شوف TX.
+🔗 <a href="{tx_link}">TX</a> | <a href="{wallet_link}">Wallet</a>
 """
     log.info(f"📤 ETH buy alert: {name} spent {buy['value_eth']:.4f} ETH")
     await send_telegram(text, session)
