@@ -582,11 +582,6 @@ ETH_WHALES = [
         "address": "0xdead000000000000000042069420694206942069",
         "note": "🔥 SHIB burn address - 41% من الإمداد",
     },
-    {
-        "name": "Binance Cold Wallet",
-        "address": "0xf977814e90da44bfa03b6295a0616a897441acec",
-        "note": "Binance cold storage",
-    },
 
     # =========================================================
     # 🏆 Murad Mahmudov على Ethereum - $24M portfolio!
@@ -684,11 +679,6 @@ BSC_WHALES = [
         "name": "FLOKI BSC Whale",
         "address": "0x95aD61b0a150d79219dCf64e1E6Cc01f0B64c4cE",
         "note": "FLOKI top holder على BSC",
-    },
-    {
-        "name": "Binance Hot Wallet BSC",
-        "address": "0x8894e0a0c962cb723c1976a4421c95949be2d4e3",
-        "note": "Binance hot wallet على BSC",
     },
     {
         "name": "CZ Personal Wallet (alleged)",
