@@ -493,6 +493,12 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
                 value_usd = buy["sol_amount"] * sol_price if sol_price else 0
                 buy["value_usd"] = value_usd
 
+                # فلتر: نتخطى المعاملات القديمة (أقدم من 10 دقايق)
+                tx_age = int(time.time() - buy.get("timestamp", 0))
+                if tx_age > 600:
+                    mark_seen(sig)
+                    continue
+
                 # فلتر حسب الحد الأدنى + ONLY_FAMOUS
                 is_famous = whale.get("is_famous", False)
                 if value_usd >= MIN_BUY_USD and value_usd <= MAX_BUY_USD:
