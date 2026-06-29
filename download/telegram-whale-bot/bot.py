@@ -819,14 +819,15 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     wallet_link = f"https://solscan.io/account/{whale['address']}"
     ds_link = f"https://dexscreener.com/solana/{token_mint}"
     
-    text = f"""{header}
+    text = f"""{header} {delay_str}
 
 🪙 <b>{symbol}</b> - {token_name}
 <code>{token_mint}</code>
 
 💰 {usd_str}
 🏷️ {format_usd(mcap)}
-⏰ {tx_time_str}
+⏰ شراء: {tx_time_str}
+📡 وصول: {datetime.now(cairo_tz).strftime("%H:%M:%S")}
 
 🔗 <a href="{ds_link}">Chart</a> | <a href="{tx_link}">TX</a>{safety_text}
 """
