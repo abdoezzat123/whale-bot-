@@ -798,19 +798,21 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
         header = f"🐋 <b>{name}</b> اشترى!"
         footer = ""
 
+    tx_link = f"https://solscan.io/tx/{buy['signature']}"
+    wallet_link = f"https://solscan.io/account/{whale['address']}"
+    
     text = f"""{header} {delay_str}
 
 🪙 <b>{symbol}</b> - {token_name}{age_str}
-📋 <code>{token_mint}</code>
+<code>{token_mint}</code>
 
-💰 شراء: {usd_str} ({sol_str})
-🏷️ MC: {format_usd(mcap)} | 💧 سيولة: {format_usd(liquidity)}
-📊 سعر: {price_str} | 📈 حجم 24h: {format_usd(volume)}
+💰 {usd_str} ({sol_str})
+🏷️ {format_usd(mcap)} | 💧 {format_usd(liquidity)}
+📊 {price_str} | 📈 {format_usd(volume)}
 
 ⏰ <b>{tx_time_str}</b> ({tx_date_str})
 
-🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">TX</a> | <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>{footer}
-{safety_text}
+🔗 <a href="{url}">Chart</a> | <a href="{tx_link}">TX</a> | <a href="{wallet_link}">Wallet</a>{footer}{safety_text}
 """
     log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
     await send_telegram(text, session)
