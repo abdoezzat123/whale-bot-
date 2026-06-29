@@ -1,0 +1,48 @@
+// Prisma schema for whale bot dashboard
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+model WhaleWallet {
+  id        String   @id @default(cuid())
+  name      String
+  address   String   @unique
+  network   String   @default("solana")
+  isFamous  Boolean  @default(false)
+  source    String   @default("manual")
+  note      String?
+  active    Boolean  @default(true)
+  createdAt DateTime @default(now())
+}
+
+model BuyAlert {
+  id           String   @id @default(cuid())
+  whaleName    String
+  whaleAddress String
+  network      String   @default("solana")
+  tokenSymbol  String
+  tokenName    String
+  tokenAddress String
+  buyAmount    Float
+  buyAmountUsd Float
+  tokenPrice   Float    @default(0)
+  marketCap    Float    @default(0)
+  liquidity    Float    @default(0)
+  volume24h    Float    @default(0)
+  timestamp    DateTime @default(now())
+  txHash       String?
+  isGem        Boolean  @default(false)
+  createdAt    DateTime @default(now())
+}
+
+model BotSetting {
+  id    String @id @default(cuid())
+  key   String @unique
+  value String
+}
