@@ -477,36 +477,6 @@ ETH_WHALES = [
     # =========================================================
     # 📢 من قناة @ETHTRENDING - محافظ الـ callers النشطة
     # =========================================================
-    {
-        "name": "🐋 ETHTRENDING",
-        "address": "0x975a378eba776a9fa5419c3305d3533779fb8187",
-        "note": "📢 من @ETHTRENDING - نشط جداً",
-        "source": "ETHTRENDING",
-    },
-    {
-        "name": "🐋 ETHTRENDING",
-        "address": "0x11b9c971185aba5f7a76595dacff8a92bd6d613e",
-        "note": "📢 من @ETHTRENDING - نشط جداً",
-        "source": "ETHTRENDING",
-    },
-    {
-        "name": "🐋 ETHTRENDING",
-        "address": "0x30ce5b150a8acc1599ea2720eb88b754c5f69e1a",
-        "note": "📢 من @ETHTRENDING - نشط جداً",
-        "source": "ETHTRENDING",
-    },
-    {
-        "name": "🐋 ETHTRENDING",
-        "address": "0x44e164da74a5727536ce45f7d8e9f4847043602d",
-        "note": "📢 من @ETHTRENDING - نشط جداً",
-        "source": "ETHTRENDING",
-    },
-    {
-        "name": "🐋 ETHTRENDING",
-        "address": "0x398fa5dedc3d95570706946c410e0bfa57f7b49f",
-        "note": "📢 من @ETHTRENDING - نشط جداً",
-        "source": "ETHTRENDING",
-    },
 
     # =========================================================
     # 📢 من قناة @NeoCallss - أوائل المشترين النشطين
