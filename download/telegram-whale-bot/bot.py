@@ -636,12 +636,11 @@ async def check_and_notify_accumulation(token_address: str, token_symbol: str,
 
 
 async def check_token_safety(session, token_mint, token_info):
-    """فحص أمان العملة - هل هي scam ولا آمنة؟"""
-    safety = {"score": 0, "warnings": [], "safe": True}
+    """فحص العملة - فرصة ولا خطر؟"""
+    safety = {"score": 0, "warnings": [], "opportunity": False}
     
     if not token_info:
         safety["warnings"].append("⚠️ مفيش بيانات")
-        safety["safe"] = False
         return safety
     
     # 1. عمر العملة
@@ -649,44 +648,57 @@ async def check_token_safety(session, token_mint, token_info):
     if created:
         age_h = (int(time.time() * 1000) - created) / 3600000
         if age_h < 1:
-            safety["warnings"].append("🆕 عملة جديدة جداً (أقل من ساعة)")
-            safety["score"] += 1
+            safety["warnings"].append("🆕 جديدة جداً (أقل من ساعة) - فرصة!")
+            safety["opportunity"] = True
         elif age_h < 24:
-            safety["warnings"].append("🆕 عملة جديدة (أقل من يوم)")
-            safety["score"] += 0
+            safety["warnings"].append("🆕 جديدة (أقل من يوم) - فرصة!")
+            safety["opportunity"] = True
+        elif age_h < 168:
+            safety["warnings"].append("📅 عمرها أقل من أسبوع")
         else:
-            safety["score"] -= 1  # عملة قديمة = أنسب
+            safety["warnings"].append("📅 عملة قديمة")
     
     # 2. السيولة
     liquidity = token_info.get("liquidity_usd", 0)
     if liquidity < 5000:
-        safety["warnings"].append("🚨 سيولة ضعيفة جداً (< $5K) - خطر!")
-        safety["safe"] = False
+        safety["warnings"].append("🚨 سيولة ضعيفة جداً (< $5K) - خطر rug pull!")
+        safety["score"] += 2
     elif liquidity < 20000:
-        safety["warnings"].append("⚠️ سيولة ضعيفة (< $20K)")
-        safety["score"] += 1
+        safety["warnings"].append("💧 سيولة صغيرة (< $20K) - فرصة للنمو")
+        safety["opportunity"] = True
+    elif liquidity < 100000:
+        safety["warnings"].append("💧 سيولة متوسطة - كويسة")
     else:
-        safety["score"] -= 1  # سيولة كويسة
+        safety["warnings"].append("💧 سيولة عالية - آمنة بس مش هتطير 100x")
     
-    # 3. Market Cap
+    # 3. Market Cap - ده أهم فحص
     mcap = token_info.get("market_cap", 0)
-    if mcap > 10_000_000:
-        safety["warnings"].append("📊 MC عالي ($10M+) - مش هتطير 100x")
-        safety["score"] += 1
+    if mcap < 100000:
+        safety["warnings"].append("💎 MC تحت $100K - فرصة 100x!")
+        safety["opportunity"] = True
+    elif mcap < 500000:
+        safety["warnings"].append("💎 MC تحت $500K - فرصة 10x-50x!")
+        safety["opportunity"] = True
+    elif mcap < 1000000:
+        safety["warnings"].append("📊 MC تحت $1M - فرصة 5x-10x")
+    elif mcap < 5000000:
+        safety["warnings"].append("📊 MC $1M-$5M - فرصة 2x-5x")
+    else:
+        safety["warnings"].append("📊 MC عالي ($5M+) - مش هتطير كتير")
     
     # 4. حجم التداول vs السيولة
     volume = token_info.get("volume_24h", 0)
     if volume > 0 and liquidity > 0:
         vol_liq_ratio = volume / liquidity
         if vol_liq_ratio > 10:
-            safety["warnings"].append("🔥 حجم تداول ضخم مقارنة بالسيولة (مضاربة)")
-    
-    # 5. نسبة الشراء/البيع (لو موجودة)
-    # نحاول نجيبها من DexScreener
+            safety["warnings"].append("🔥 حجم تداول ضخم (مضاربة قوية)")
+            safety["opportunity"] = True
     
     # التحليل النهائي
     if safety["score"] >= 2:
-        safety["safe"] = False
+        safety["warnings"].append("🚨 تحذير: العملة دي فيها مخاطر!")
+    elif safety["opportunity"]:
+        safety["warnings"].append("✅ فرصة ذهبية - MC صغير وعمر جديد!")
     
     return safety
 
@@ -773,13 +785,9 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     safety = await check_token_safety(session, token_mint, info)
     safety_text = ""
     if safety["warnings"]:
-        safety_text = "\n\n🔍 <b>تحليل الأمان:</b>"
+        safety_text = "\n\n🔍 <b>تحليل:</b>"
         for w in safety["warnings"]:
             safety_text += f"\n{w}"
-        if not safety["safe"]:
-            safety_text += "\n🚨 <b>تحذير: العملة دي فيها مخاطر!</b>"
-        else:
-            safety_text += "\n✅ العملة تبدو آمنة نسبياً"
 
     # إشعار خاص للمطورين المعروفين
     is_famous = whale.get("is_famous", False)
