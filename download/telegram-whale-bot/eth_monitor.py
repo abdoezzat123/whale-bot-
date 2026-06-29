@@ -283,20 +283,18 @@ async def notify_eth_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession,
                 footer = ""
 
             tx_link = f"https://etherscan.io/tx/{buy['tx_hash']}"
-            wallet_link = f"https://etherscan.io/address/{whale['address']}"
+            ds_link = f"https://dexscreener.com/ethereum/{buy.get('token_address', '?')}"
             
-            text = f"""{header} {delay_str}
+            text = f"""{header}
 
 🪙 <b>{symbol}</b> - {token_name}
 <code>{buy.get('token_address', '?')}</code>
 
-💰 {format_usd(value_usd)} ({buy.get('token_amount', 0):,.0f} {symbol})
-🏷️ {format_usd(mcap)} | 💧 {format_usd(liquidity)}
-📊 {price_str} | 📈 {format_usd(volume)}
+💰 {format_usd(value_usd)}
+🏷️ {format_usd(mcap)}
+⏰ {tx_time_str}
 
-⏰ <b>{tx_time_str}</b> ({tx_date_str})
-
-🔗 <a href="{url}">Chart</a> | <a href="{tx_link}">TX</a> | <a href="{wallet_link}">Wallet</a>{footer}
+🔗 <a href="{ds_link}">Chart</a> | <a href="{tx_link}">TX</a>{footer}
 """
             log.info(f"📤 ETH buy alert: {name} bought {symbol} ({format_usd(value_usd)})")
             await send_telegram(text, session)

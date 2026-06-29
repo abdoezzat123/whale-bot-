@@ -817,19 +817,18 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
 
     tx_link = f"https://solscan.io/tx/{buy['signature']}"
     wallet_link = f"https://solscan.io/account/{whale['address']}"
+    ds_link = f"https://dexscreener.com/solana/{token_mint}"
     
-    text = f"""{header} {delay_str}
+    text = f"""{header}
 
-🪙 <b>{symbol}</b> - {token_name}{age_str}
+🪙 <b>{symbol}</b> - {token_name}
 <code>{token_mint}</code>
 
-💰 {usd_str} ({sol_str})
-🏷️ {format_usd(mcap)} | 💧 {format_usd(liquidity)}
-📊 {price_str} | 📈 {format_usd(volume)}
+💰 {usd_str}
+🏷️ {format_usd(mcap)}
+⏰ {tx_time_str}
 
-⏰ <b>{tx_time_str}</b> ({tx_date_str})
-
-🔗 <a href="{url}">Chart</a> | <a href="{tx_link}">TX</a> | <a href="{wallet_link}">Wallet</a>{footer}{safety_text}
+🔗 <a href="{ds_link}">Chart</a> | <a href="{tx_link}">TX</a>{safety_text}
 """
     log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
     await send_telegram(text, session)
