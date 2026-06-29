@@ -648,68 +648,74 @@ async def check_and_notify_accumulation(token_address: str, token_symbol: str,
 
 async def check_token_safety(session, token_mint, token_info):
     """فحص العملة - فرصة ولا خطر؟"""
-    safety = {"score": 0, "warnings": [], "opportunity": False}
+    safety = {"score": 0, "warnings": [], "opportunity": False, "gem": False}
     
     if not token_info:
         safety["warnings"].append("⚠️ مفيش بيانات")
         return safety
     
-    # 1. عمر العملة
-    created = token_info.get("pair_created_at")
-    if created:
-        age_h = (int(time.time() * 1000) - created) / 3600000
-        if age_h < 1:
-            safety["warnings"].append("🆕 جديدة جداً (أقل من ساعة) - فرصة!")
-            safety["opportunity"] = True
-        elif age_h < 24:
-            safety["warnings"].append("🆕 جديدة (أقل من يوم) - فرصة!")
-            safety["opportunity"] = True
-        elif age_h < 168:
-            safety["warnings"].append("📅 عمرها أقل من أسبوع")
-        else:
-            safety["warnings"].append("📅 عملة قديمة")
-    
-    # 2. السيولة
-    liquidity = token_info.get("liquidity_usd", 0)
-    if liquidity < 5000:
-        safety["warnings"].append("🚨 سيولة ضعيفة جداً (< $5K) - خطر rug pull!")
-        safety["score"] += 2
-    elif liquidity < 20000:
-        safety["warnings"].append("💧 سيولة صغيرة (< $20K) - فرصة للنمو")
-        safety["opportunity"] = True
-    elif liquidity < 100000:
-        safety["warnings"].append("💧 سيولة متوسطة - كويسة")
-    else:
-        safety["warnings"].append("💧 سيولة عالية - آمنة بس مش هتطير 100x")
-    
-    # 3. Market Cap - ده أهم فحص
     mcap = token_info.get("market_cap", 0)
-    if mcap < 100000:
-        safety["warnings"].append("💎 MC تحت $100K - فرصة 100x!")
+    liquidity = token_info.get("liquidity_usd", 0)
+    volume = token_info.get("volume_24h", 0)
+    
+    # 1. Market Cap
+    if mcap < 5000:
+        safety["warnings"].append("💎💎 MC تحت $5K - GEM!")
+        safety["gem"] = True
+    elif mcap < 50000:
+        safety["warnings"].append("💎 MC تحت $50K - فرصة 100x!")
+        safety["opportunity"] = True
+    elif mcap < 200000:
+        safety["warnings"].append("💎 MC تحت $200K - فرصة 50x!")
         safety["opportunity"] = True
     elif mcap < 500000:
         safety["warnings"].append("💎 MC تحت $500K - فرصة 10x-50x!")
         safety["opportunity"] = True
     elif mcap < 1000000:
         safety["warnings"].append("📊 MC تحت $1M - فرصة 5x-10x")
-    elif mcap < 5000000:
-        safety["warnings"].append("📊 MC $1M-$5M - فرصة 2x-5x")
-    else:
-        safety["warnings"].append("📊 MC عالي ($5M+) - مش هتطير كتير")
+    elif mcap < 2000000:
+        safety["warnings"].append("📊 MC تحت $2M - فرصة 2x-5x")
     
-    # 4. حجم التداول vs السيولة
-    volume = token_info.get("volume_24h", 0)
-    if volume > 0 and liquidity > 0:
-        vol_liq_ratio = volume / liquidity
-        if vol_liq_ratio > 10:
-            safety["warnings"].append("🔥 حجم تداول ضخم (مضاربة قوية)")
+    # 2. عمر العملة
+    created = token_info.get("pair_created_at")
+    if created:
+        age_h = (int(time.time() * 1000) - created) / 3600000
+        if age_h < 1:
+            safety["warnings"].append("🆕 جديدة جداً (أقل من ساعة)")
+            safety["gem"] = True
+        elif age_h < 24:
+            safety["warnings"].append("🆕 جديدة (أقل من يوم)")
             safety["opportunity"] = True
     
+    # 3. السيولة
+    if liquidity < 5000:
+        safety["warnings"].append("🚨 سيولة ضعيفة جداً - خطر rug!")
+        safety["score"] += 2
+    elif liquidity < 20000:
+        safety["warnings"].append("💧 سيولة صغيرة - فرصة للنمو")
+    elif liquidity < 100000:
+        safety["warnings"].append("💧 سيولة كويسة")
+    
+    # 4. حجم التداول - ده اللي بيوريك لو وراها ناس تقيلة
+    if volume > 50000 and mcap < 500000:
+        safety["warnings"].append("🔥🔥 حجم تداول قوي + MC صغير = ناس تقيلة!")
+        safety["gem"] = True
+    elif volume > 10000 and mcap < 200000:
+        safety["warnings"].append("🔥 حجم تداول نشط على MC صغير")
+        safety["opportunity"] = True
+    
+    # 5. نسبة Volume/Market Cap
+    if volume > 0 and mcap > 0:
+        vol_mc_ratio = volume / mcap
+        if vol_mc_ratio > 1:
+            safety["warnings"].append(f"📊 الحجم > MC ({vol_mc_ratio:.1f}x) - اهتمام قوي!")
+            safety["gem"] = True
+    
     # التحليل النهائي
-    if safety["score"] >= 2:
-        safety["warnings"].append("🚨 تحذير: العملة دي فيها مخاطر!")
+    if safety["gem"]:
+        safety["warnings"].append("💎💎💎 GEM - فرصة نادرة!")
     elif safety["opportunity"]:
-        safety["warnings"].append("✅ فرصة ذهبية - MC صغير وعمر جديد!")
+        safety["warnings"].append("✅ فرصة ذهبية!")
     
     return safety
 
