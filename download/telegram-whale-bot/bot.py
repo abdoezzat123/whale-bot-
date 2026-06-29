@@ -30,7 +30,7 @@ load_dotenv()
 # ==================== الإعدادات ====================
 TELEGRAM_BOT_TOKEN = os.getenv("TELEGRAM_BOT_TOKEN", "").strip()
 TELEGRAM_CHAT_ID = os.getenv("TELEGRAM_CHAT_ID", "").strip()
-MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "500"))
+MIN_BUY_USD = float(os.getenv("MIN_BUY_USD", "50"))
 MAX_BUY_USD = float(os.getenv("MAX_BUY_USD", "2000000"))  # فوق 2M نتجاهل
 POLL_SECONDS = int(os.getenv("POLL_SECONDS", "5"))  # 5 ثواني = شبه real-time
 ONLY_FAMOUS = os.getenv("ONLY_FAMOUS", "false").strip().lower() == "true"  # فلترة الإشعارات
