@@ -634,6 +634,63 @@ async def check_and_notify_accumulation(token_address: str, token_symbol: str,
     await send_telegram(text, session)
     mark_accumulation_alert_sent(token_address)
 
+
+async def check_token_safety(session, token_mint, token_info):
+    """فحص أمان العملة - هل هي scam ولا آمنة؟"""
+    safety = {"score": 0, "warnings": [], "safe": True}
+    
+    if not token_info:
+        safety["warnings"].append("⚠️ مفيش بيانات")
+        safety["safe"] = False
+        return safety
+    
+    # 1. عمر العملة
+    created = token_info.get("pair_created_at")
+    if created:
+        age_h = (int(time.time() * 1000) - created) / 3600000
+        if age_h < 1:
+            safety["warnings"].append("🆕 عملة جديدة جداً (أقل من ساعة)")
+            safety["score"] += 1
+        elif age_h < 24:
+            safety["warnings"].append("🆕 عملة جديدة (أقل من يوم)")
+            safety["score"] += 0
+        else:
+            safety["score"] -= 1  # عملة قديمة = أنسب
+    
+    # 2. السيولة
+    liquidity = token_info.get("liquidity_usd", 0)
+    if liquidity < 5000:
+        safety["warnings"].append("🚨 سيولة ضعيفة جداً (< $5K) - خطر!")
+        safety["safe"] = False
+    elif liquidity < 20000:
+        safety["warnings"].append("⚠️ سيولة ضعيفة (< $20K)")
+        safety["score"] += 1
+    else:
+        safety["score"] -= 1  # سيولة كويسة
+    
+    # 3. Market Cap
+    mcap = token_info.get("market_cap", 0)
+    if mcap > 10_000_000:
+        safety["warnings"].append("📊 MC عالي ($10M+) - مش هتطير 100x")
+        safety["score"] += 1
+    
+    # 4. حجم التداول vs السيولة
+    volume = token_info.get("volume_24h", 0)
+    if volume > 0 and liquidity > 0:
+        vol_liq_ratio = volume / liquidity
+        if vol_liq_ratio > 10:
+            safety["warnings"].append("🔥 حجم تداول ضخم مقارنة بالسيولة (مضاربة)")
+    
+    # 5. نسبة الشراء/البيع (لو موجودة)
+    # نحاول نجيبها من DexScreener
+    
+    # التحليل النهائي
+    if safety["score"] >= 2:
+        safety["safe"] = False
+    
+    return safety
+
+
 async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol_price: float):
     """إرسال إشعار شراء على Telegram - real-time مع الوقت + Market Cap"""
     name = whale.get("name", "Unknown Whale")
@@ -712,6 +769,18 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
     sol_str = f"{buy['sol_amount']:.2f} SOL"
     price_str = f"${price:.10f}" if price < 0.001 else (f"${price:.6f}" if price < 0.01 else f"${price:.4f}")
 
+    # فحص أمان العملة
+    safety = await check_token_safety(session, token_mint, info)
+    safety_text = ""
+    if safety["warnings"]:
+        safety_text = "\n\n🔍 <b>تحليل الأمان:</b>"
+        for w in safety["warnings"]:
+            safety_text += f"\n{w}"
+        if not safety["safe"]:
+            safety_text += "\n🚨 <b>تحذير: العملة دي فيها مخاطر!</b>"
+        else:
+            safety_text += "\n✅ العملة تبدو آمنة نسبياً"
+
     # إشعار خاص للمطورين المعروفين
     is_famous = whale.get("is_famous", False)
     if is_famous:
@@ -733,6 +802,7 @@ async def notify_buy(whale: Dict, buy: Dict, session: aiohttp.ClientSession, sol
 ⏰ <b>{tx_time_str}</b> ({tx_date_str})
 
 🔗 <a href="{url}">DexScreener</a> | <a href="https://solscan.io/tx/{buy['signature']}">TX</a> | <a href="https://solscan.io/account/{whale['address']}">المحفظة</a>{footer}
+{safety_text}
 """
     log.info(f"📤 Buy alert [{delay_str}]: {name} bought {symbol} ({usd_str}) | MC: {format_usd(mcap)}")
     await send_telegram(text, session)
