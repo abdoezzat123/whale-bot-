@@ -245,9 +245,9 @@ def get_all_whales() -> List[Dict]:
     return unique
 
 # ==================== Telegram ====================
-async def send_telegram(text: str, session: aiohttp.ClientSession):
+async def send_telegram(text: str, session: aiohttp.ClientSession, reply_markup=None):
     if not TELEGRAM_CHAT_ID:
-        log.warning("TELEGRAM_CHAT_ID غير مضبوط في .env - الإشعار مش هيتبعت")
+        log.warning("TELEGRAM_CHAT_ID غير مضبوط في .env")
         return
     url = f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/sendMessage"
     payload = {
@@ -256,10 +256,12 @@ async def send_telegram(text: str, session: aiohttp.ClientSession):
         "parse_mode": "HTML",
         "disable_web_page_preview": True,
     }
+    if reply_markup:
+        payload["reply_markup"] = reply_markup
     try:
         async with session.post(url, json=payload, timeout=15) as resp:
             if resp.status != 200:
-                log.error(f"Telegram error {resp.status}: {await resp.text()}")
+                log.error(f"Telegram error {resp.status}")
     except Exception as e:
         log.error(f"Telegram exception: {e}")
 
@@ -833,7 +835,7 @@ async def get_sol_price(session: aiohttp.ClientSession) -> float:
 
 # ==================== Bot Commands (للإدارة من التيليجرام) ====================
 async def handle_telegram_updates(session: aiohttp.ClientSession):
-    """استقبال أوامر من التيليجرام (لإضافة/حذف محافظ)"""
+    """استقبال أوامر وأزرار من التيليجرام"""
     offset = 0
     while True:
         try:
@@ -849,12 +851,41 @@ async def handle_telegram_updates(session: aiohttp.ClientSession):
                     continue
                 for update in data.get("result", []):
                     offset = update["update_id"] + 1
+                    
+                    # لو رسالة عادية
                     msg = update.get("message", {})
-                    text = msg.get("text", "")
-                    chat_id = str(msg.get("chat", {}).get("id", ""))
-                    if chat_id != TELEGRAM_CHAT_ID:
-                        continue  # تجاهل رسائل من الناس التانيين
-                    await handle_command(text, session)
+                    if msg:
+                        text = msg.get("text", "")
+                        chat_id = str(msg.get("chat", {}).get("id", ""))
+                        if chat_id != TELEGRAM_CHAT_ID:
+                            continue
+                        await handle_command(text, session)
+                    
+                    # لو ضغط على زرار
+                    callback = update.get("callback_query", {})
+                    if callback:
+                        cb_data = callback.get("data", "")
+                        cb_chat_id = str(callback.get("message", {}).get("chat", {}).get("id", ""))
+                        if cb_chat_id != TELEGRAM_CHAT_ID:
+                            continue
+                        
+                        # نرد على الـ callback
+                        cb_id = callback.get("id", "")
+                        await session.post(
+                            f"https://api.telegram.org/bot{TELEGRAM_BOT_TOKEN}/answerCallbackQuery",
+                            json={"callback_query_id": cb_id},
+                            timeout=10
+                        )
+                        
+                        # ننفذ الأمر
+                        if cb_data == "list":
+                            await handle_command("/list", session)
+                        elif cb_data == "stats":
+                            await handle_command("/stats", session)
+                        elif cb_data == "test":
+                            await handle_command("/test", session)
+                        elif cb_data == "help":
+                            await handle_command("/help", session)
         except asyncio.TimeoutError:
             continue
         except Exception as e:
@@ -1035,6 +1066,25 @@ async def main():
         )
 
         # تشغيل listener الأوامر في الـ background
+        # نبعت أزرار تفاعلية
+        from collections import OrderedDict
+        keyboard = {
+            "inline_keyboard": [
+                [
+                    {"text": "📋 المحافظ", "callback_data": "list"},
+                    {"text": "📊 إحصائيات", "callback_data": "stats"},
+                ],
+                [
+                    {"text": "🔔 اختبار", "callback_data": "test"},
+                    {"text": "❓ مساعدة", "callback_data": "help"},
+                ]
+            ]
+        }
+        await send_telegram(
+            f"🚀 <b>البوت اشتغل!</b>\n\n🐋 محافظ: {len(get_all_whales())}\n💰 حد الشراء: ${MIN_BUY_USD:,.0f}\n\nاضغط زرار:",
+            session,
+            reply_markup=keyboard
+        )
         asyncio.create_task(handle_telegram_updates(session))
 
         # حلقة الفحص الرئيسية
