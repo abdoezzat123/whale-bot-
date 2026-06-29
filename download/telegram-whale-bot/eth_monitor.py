@@ -371,6 +371,13 @@ async def poll_eth_whale(whale: Dict, session: aiohttp.ClientSession, eth_price:
                 if only_famous and not is_famous:
                     pass  # نتجاهل الحيتان العاديين
                 else:
+                    # فلتر MC: نشوف قيمة العملة
+                    token_info_check = await get_token_info_dexscreener(session, buy.get("token_address", ""))
+                    if token_info_check:
+                        token_mcap = token_info_check.get("market_cap", 0)
+                        if token_mcap > MAX_BUY_USD:
+                            mark_seen(tx_hash)
+                            continue
                     await notify_eth_buy(whale, buy, session, eth_price, source)
 
             mark_seen(tx_hash)

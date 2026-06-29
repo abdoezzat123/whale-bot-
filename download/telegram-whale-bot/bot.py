@@ -504,6 +504,15 @@ async def poll_whale(whale: Dict, session: aiohttp.ClientSession, sol_price: flo
                 # فلتر حسب الحد الأدنى + ONLY_FAMOUS
                 is_famous = whale.get("is_famous", False)
                 if value_usd >= MIN_BUY_USD and value_usd <= MAX_BUY_USD:
+                    # فلتر MC: نشوف قيمة العملة الأول
+                    token_info_check = await get_token_info(session, buy["token_mint"])
+                    if token_info_check:
+                        token_mcap = token_info_check.get("market_cap", 0)
+                        if token_mcap > MAX_BUY_USD:
+                            log.info(f"⏭️ Skip {buy['token_mint'][:10]}... MC={token_mcap} > {MAX_BUY_USD}")
+                            mark_seen(sig)
+                            continue
+                    
                     # لو ONLY_FAMOUS=true، نبعت بس للمطورين المعروفين
                     if ONLY_FAMOUS and not is_famous:
                         pass  # نتجاهل الحيتان العاديين
