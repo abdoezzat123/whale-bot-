@@ -922,13 +922,16 @@ async def handle_command(text: str, session: aiohttp.ClientSession):
     elif cmd == "/list":
         whales = get_all_whales()
         if not whales:
-            reply = "مفيش محافظ في القائمة."
+            reply = "مفيش محافظ."
         else:
-            reply = f"📋 <b>المحافظ المتابعة ({len(whales)}):</b>\n\n"
-            for i, w in enumerate(whales, 1):
-                reply += f"{i}. <b>{w.get('name', 'بدون اسم')}</b>\n   <code>{w['address']}</code>\n"
-                if w.get('note'):
-                    reply += f"   📝 {w['note']}\n"
+            from collections import Counter
+            names = Counter(w.get('name', '???') for w in whales)
+            reply = f"📋 <b>المحافظ: {len(whales)}</b>\n\n"
+            for name, count in names.most_common():
+                reply += f"• {name}"
+                if count > 1:
+                    reply += f" ({count}x)"
+                reply += "\n"
     elif cmd == "/add":
         if len(parts) < 3:
             reply = "الاستخدام: /add <address> <name>\nمثال: /add 5CQw...HFMJ WhaleAlpha"
