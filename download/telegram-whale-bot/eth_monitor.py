@@ -361,6 +361,12 @@ async def poll_eth_whale(whale: Dict, session: aiohttp.ClientSession, eth_price:
 
             buy = is_token_buy(tx, address)
             if buy:
+                # فلتر: نتخطى المعاملات القديمة (أقدم من 10 دقايق)
+                tx_age = int(time.time() - buy.get("timestamp", 0))
+                if tx_age > 600:
+                    mark_seen(tx_hash)
+                    continue
+
                 value_usd = 0  # هنحسبها من token_info
                 # فلترة ONLY_FAMOUS
                 is_famous = whale.get("is_famous", False)
